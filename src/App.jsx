@@ -329,6 +329,67 @@ const TVView = ({ tables, queue }) => (
   </div>
 );
 
+const CreditsView = () => (
+  <div className="p-8">
+    <div className="mb-8">
+      <h2 className="text-3xl font-black mb-1 italic">SISTEMA DE <span className="text-amber-400">CRÉDITOS</span></h2>
+      <p className="text-slate-400 text-sm">Registro de fiados y abonos de clientes frecuentes.</p>
+    </div>
+
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* Left: Client List */}
+      <div className="lg:col-span-2 space-y-4">
+        <div className="relative mb-6">
+          <input type="text" placeholder="Buscar cliente..." className="w-full neon-input pl-12 bg-white/5" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+        </div>
+        
+        {[
+          { name: 'Don Roberto', debt: 45000, lastOrder: 'hace 2 días' },
+          { name: 'Andrés "El Flaco"', debt: 12000, lastOrder: 'hace 4 horas' },
+          { name: 'Ricardo Gómez', debt: 28000, lastOrder: 'hace 1 día' },
+        ].map((client, i) => (
+          <div key={i} className="glass-card p-6 flex items-center justify-between border-none bg-white/5 hover:bg-white/10">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-400/20 text-amber-400 rounded-full flex items-center justify-center font-black">
+                {client.name[0]}
+              </div>
+              <div>
+                <h4 className="font-bold">{client.name}</h4>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Último consumo: {client.lastOrder}</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-black text-amber-400 tracking-tighter">${client.debt.toLocaleString()}</p>
+              <button className="text-[10px] font-black text-billar-neon uppercase hover:underline">Ver Historial</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Right: Summary & Action */}
+      <div className="space-y-6">
+        <div className="glass-card p-6 bg-amber-400/5 border-amber-400/20">
+          <h3 className="text-sm font-black uppercase tracking-widest text-amber-400 mb-4">Resumen de deuda</h3>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Total por cobrar:</span>
+              <span className="font-bold text-white">$85.000</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">Clientes activos:</span>
+              <span className="font-bold text-white">14</span>
+            </div>
+          </div>
+          <button className="w-full bg-amber-400 text-billar-dark font-black py-3 rounded-lg mt-6 shadow-lg shadow-amber-400/20 hover:scale-[1.02] transition-all">
+            REGISTRAR ABONO
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 // --- Main App ---
 
 export default function App() {
@@ -403,6 +464,7 @@ export default function App() {
             >
               {currentView === 'dashboard' && <DashboardView tables={tables} />}
               {currentView === 'music' && <MusicView queue={queue} />}
+              {currentView === 'credits' && <CreditsView />}
               {/* Other views would be here */}
             </motion.div>
           </AnimatePresence>
