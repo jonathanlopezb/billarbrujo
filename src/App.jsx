@@ -14,7 +14,10 @@ import {
   Search, 
   Table as TableIcon,
   CreditCard,
-  Settings
+  Settings,
+  Lock,
+  User,
+  Key
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
@@ -24,19 +27,6 @@ const ROLES = {
   ADMIN: 'admin',
   WAITRESS: 'mesero'
 };
-
-// --- Mock Data (Replace with DB calls) ---
-const INITIAL_TABLES = [
-  { id: 1, name: 'Mesa 1', status: 'available', players: [], startTime: null },
-  { id: 2, name: 'Mesa 2', status: 'playing', players: ['Juan', 'Pedro'], startTime: Date.now() - 3600000, score: [15, 12] },
-  { id: 3, name: 'Mesa 3', status: 'available', players: [], startTime: null },
-  { id: 4, name: 'Mesa 4', status: 'playing', players: ['Carlos', 'Ana'], startTime: Date.now() - 1800000, score: [8, 10] },
-];
-
-const INITIAL_QUEUE = [
-  { id: 1, title: 'La Bilirrubina - Juan Luis Guerra', requestedBy: 'Mesa 2' },
-  { id: 2, title: 'Cali Pachanguero - Grupo Niche', requestedBy: 'Barra' },
-];
 
 // --- Components ---
 
@@ -84,11 +74,11 @@ const Navbar = ({ user, onLogout }) => (
 const StatsGrid = () => (
   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
     {[
-      { label: 'Ingresos Hoy', value: '$450.000', icon: DollarSign, color: 'text-emerald-400' },
-      { label: 'Mesas Ocupadas', value: '3/4', icon: TableIcon, color: 'text-billar-neon' },
-      { label: 'Fiados Pendientes', value: '$85.000', icon: CreditCard, color: 'text-amber-400' },
-      { label: 'Canciones en Cola', value: '12', icon: Music, color: 'text-purple-400' },
-    ].map((stat, i) => (
+      { label: 'Ingresos Hoy', value: '$0', icon: DollarSign, color: 'text-emerald-400' },
+      { label: 'Mesas Ocupadas', value: '0/4', icon: TableIcon, color: 'text-billar-neon' },
+      { label: 'Fiados Pendientes', value: '$0', icon: CreditCard, color: 'text-amber-400' },
+      { label: 'Canciones en Cola', value: '0', icon: Music, color: 'text-purple-400' },
+    ].map((stat, i) => ( stat &&
       <div key={i} className="glass-card p-6 flex items-center justify-between">
         <div>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-tighter mb-1">{stat.label}</p>
@@ -103,7 +93,8 @@ const StatsGrid = () => (
 );
 
 const TableCard = ({ table }) => {
-  const isPlaying = table.status === 'playing';
+  const isPlaying = table?.status === 'playing';
+  if (!table) return null;
   return (
     <motion.div 
       layout
@@ -126,18 +117,18 @@ const TableCard = ({ table }) => {
           <div className="space-y-4">
             <div className="flex justify-between items-center bg-white/5 rounded-lg p-3">
               <div className="text-center">
-                <p className="text-[10px] text-slate-500 uppercase font-black">{table.players[0]}</p>
-                <p className="text-2xl font-black">{table.score[0]}</p>
+                <p className="text-[10px] text-slate-500 uppercase font-black">{table.players?.[0] || 'Jugador 1'}</p>
+                <p className="text-2xl font-black">{table.score?.[0] || 0}</p>
               </div>
               <div className="h-8 w-px bg-white/10" />
               <div className="text-center">
-                <p className="text-[10px] text-slate-500 uppercase font-black">{table.players[1]}</p>
-                <p className="text-2xl font-black">{table.score[1]}</p>
+                <p className="text-[10px] text-slate-500 uppercase font-black">{table.players?.[1] || 'Jugador 2'}</p>
+                <p className="text-2xl font-black">{table.score?.[1] || 0}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 text-slate-400">
               <Clock size={14} className="text-billar-neon" />
-              <span className="text-sm font-mono tracking-tighter">01:45:22</span>
+              <span className="text-sm font-mono tracking-tighter">00:00:00</span>
             </div>
           </div>
         ) : (
@@ -165,6 +156,156 @@ const TableCard = ({ table }) => {
 };
 
 // --- Views ---
+
+const LoginView = ({ onLogin, onGoToRegister }) => {
+  const [form, setForm] = useState({ username: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const resp = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        onLogin(data);
+      } else {
+        setError(data.error || 'Error al iniciar sesión');
+      }
+    } catch (err) {
+      setError('Error de conexión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-billar-dark px-6">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-billar-neon rounded-2xl flex items-center justify-center shadow-neon-glow mx-auto mb-4">
+            <span className="text-4xl">🎱</span>
+          </div>
+          <h2 className="text-2xl font-black uppercase italic tracking-tighter">Bienvenido a <span className="text-billar-neon">El Divino Niño</span></h2>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+            <input 
+              type="text" 
+              placeholder="Usuario" 
+              className="w-full neon-input pl-12 py-3" 
+              value={form.username} 
+              onChange={e => setForm({...form, username: e.target.value})}
+              required
+            />
+          </div>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+            <input 
+              type="password" 
+              placeholder="Contraseña" 
+              className="w-full neon-input pl-12 py-3" 
+              value={form.password} 
+              onChange={e => setForm({...form, password: e.target.value})}
+              required
+            />
+          </div>
+          {error && <p className="text-red-400 text-xs font-bold uppercase text-center">{error}</p>}
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full neon-button py-4 mt-4 disabled:opacity-50"
+          >
+            {loading ? 'INGRESANDO...' : 'INICIAR SESIÓN'}
+          </button>
+        </form>
+
+        <p className="text-center text-slate-500 text-xs mt-8">
+          ¿Eres el dueño y no tienes cuenta? <button onClick={onGoToRegister} className="text-billar-neon font-black hover:underline uppercase">Regístrate aquí</button>
+        </p>
+      </motion.div>
+    </div>
+  );
+};
+
+const RegisterOwnerView = ({ onBack }) => {
+  const [form, setForm] = useState({ username: '', password: '', nombre: '', secretKey: '' });
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage({ type: '', text: '' });
+    try {
+      const resp = await fetch('/api/register-owner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const data = await resp.json();
+      if (resp.ok) {
+        setMessage({ type: 'success', text: '¡Dueño registrado! Ya puedes iniciar sesión.' });
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al registrar' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Error de conexión' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-billar-dark px-6">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 w-full max-w-md">
+        <h2 className="text-2xl font-black uppercase italic tracking-tighter text-center mb-8">Registro del <span className="text-billar-neon">Dueño</span></h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input 
+            type="text" placeholder="Nombre completo" className="w-full neon-input py-3" 
+            value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required
+          />
+          <input 
+            type="text" placeholder="Usuario" className="w-full neon-input py-3" 
+            value={form.username} onChange={e => setForm({...form, username: e.target.value})} required
+          />
+          <input 
+            type="password" placeholder="Contraseña" className="w-full neon-input py-3" 
+            value={form.password} onChange={e => setForm({...form, password: e.target.value})} required
+          />
+          <div className="relative">
+            <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+            <input 
+              type="text" placeholder="Llave Secreta" className="w-full neon-input pl-12 py-3" 
+              value={form.secretKey} onChange={e => setForm({...form, secretKey: e.target.value})} required
+            />
+          </div>
+          <p className="text-[10px] text-slate-500 text-center uppercase">Pide la llave secreta al desarrollador.</p>
+
+          {message.text && (
+            <p className={`text-xs font-bold uppercase text-center ${message.type === 'success' ? 'text-billar-neon' : 'text-red-400'}`}>
+              {message.text}
+            </p>
+          )}
+
+          <button type="submit" disabled={loading} className="w-full neon-button py-4 mt-4">
+            {loading ? 'REGISTRANDO...' : 'REGISTRAR CUENTA'}
+          </button>
+          <button type="button" onClick={onBack} className="w-full text-slate-500 text-xs font-black uppercase hover:underline mt-4">Volver al Login</button>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
 
 const DashboardView = ({ tables }) => (
   <div className="p-8">
@@ -218,7 +359,7 @@ const MusicView = ({ queue }) => (
           <Music className="text-billar-purple" /> COLA DE REPRODUCCIÓN
         </h3>
         <div className="space-y-3">
-          {queue.map((song, i) => (
+          {queue.length > 0 ? queue.map((song, i) => (
             <div key={song.id} className="glass-card p-4 flex items-center gap-4 bg-white/5 border-none">
               <div className="w-10 h-10 bg-billar-purple/20 flex items-center justify-center rounded-lg text-billar-purple font-black">
                 {i + 1}
@@ -228,7 +369,9 @@ const MusicView = ({ queue }) => (
                 <p className="text-[10px] text-slate-500 uppercase font-black">Pedido por: {song.requestedBy}</p>
               </div>
             </div>
-          ))}
+          )) : (
+            <p className="text-center text-slate-600 py-10 font-bold uppercase text-xs">No hay canciones en cola</p>
+          )}
         </div>
       </div>
     </div>
@@ -237,7 +380,6 @@ const MusicView = ({ queue }) => (
 
 const TVView = ({ tables, queue }) => (
   <div className="fixed inset-0 bg-[#05060a] z-[100] flex overflow-hidden">
-    {/* Left Side: Games */}
     <div className="w-2/3 p-12 overflow-hidden border-r border-white/5">
       <div className="flex justify-between items-center mb-16">
         <div className="flex items-center gap-4">
@@ -247,13 +389,13 @@ const TVView = ({ tables, queue }) => (
           </h1>
         </div>
         <div className="text-right">
-          <p className="text-6xl font-black font-mono text-billar-neon">17:45</p>
-          <p className="text-sm font-bold text-slate-500 tracking-[0.5em] uppercase">Lunes 09 Mar</p>
+          <p className="text-6xl font-black font-mono text-billar-neon">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+          <p className="text-sm font-bold text-slate-500 tracking-[0.5em] uppercase">Billar El Divino Niño</p>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-12">
-        {tables.filter(t => t.status === 'playing').concat(tables.filter(t => t.status !== 'playing')).slice(0, 4).map(table => (
+        {tables.slice(0, 4).map(table => (
           <div key={table.id} className={`glass-card p-10 relative overflow-hidden ${table.status === 'playing' ? 'bg-billar-neon/5 border-billar-neon/20 shadow-neon-glow' : 'opacity-40'}`}>
             <h3 className="text-3xl font-black mb-8 flex items-center gap-4">
               {table.name}
@@ -264,18 +406,18 @@ const TVView = ({ tables, queue }) => (
               <div className="space-y-10">
                 <div className="flex justify-between items-center gap-8">
                   <div className="flex-1 text-center space-y-2">
-                    <p className="text-6xl font-black">{table.score[0]}</p>
-                    <p className="text-xl font-bold text-slate-400 uppercase tracking-widest">{table.players[0]}</p>
+                    <p className="text-6xl font-black">{table.score?.[0] || 0}</p>
+                    <p className="text-xl font-bold text-slate-400 uppercase tracking-widest">{table.players?.[0] || '---'}</p>
                   </div>
                   <div className="text-2xl font-black text-slate-700">VS</div>
                   <div className="flex-1 text-center space-y-2">
-                    <p className="text-6xl font-black">{table.score[1]}</p>
-                    <p className="text-xl font-bold text-slate-400 uppercase tracking-widest">{table.players[1]}</p>
+                    <p className="text-6xl font-black">{table.score?.[1] || 0}</p>
+                    <p className="text-xl font-bold text-slate-400 uppercase tracking-widest">{table.players?.[1] || '---'}</p>
                   </div>
                 </div>
                 <div className="flex items-center justify-center gap-4 bg-white/5 py-3 rounded-2xl">
                    <Clock className="text-billar-neon" size={32} />
-                   <p className="text-4xl font-black font-mono tracking-tighter text-white/80">01:45:22</p>
+                   <p className="text-4xl font-black font-mono tracking-tighter text-white/80">00:00:00</p>
                 </div>
               </div>
             ) : (
@@ -288,7 +430,6 @@ const TVView = ({ tables, queue }) => (
       </div>
     </div>
 
-    {/* Right Side: Music */}
     <div className="w-1/3 bg-billar-card/80 p-12 flex flex-col">
        <div className="mb-12">
           <h2 className="text-3xl font-black italic tracking-tighter mb-8 flex items-center gap-3">
@@ -301,7 +442,6 @@ const TVView = ({ tables, queue }) => (
              <h4 className="text-2xl font-black mb-4">{queue[0]?.title || 'Esperando canción...'}</h4>
              <p className="text-sm font-bold text-white/40 uppercase">{queue[0]?.requestedBy || 'Billar El Divino Niño'}</p>
              
-             {/* Audio Player (Hidden) */}
              <div className="mt-4 opacity-10 grayscale brightness-50">
                 <iframe 
                   width="100%" 
@@ -316,12 +456,12 @@ const TVView = ({ tables, queue }) => (
 
        <div className="flex-1 space-y-4">
           <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-6">Siguientes Canciones</p>
-          {queue.map((song, i) => (
+          {queue.slice(1, 5).map((song, i) => (
             <div key={i} className="flex items-center gap-6 p-4 rounded-2xl hover:bg-white/5 transition-all">
                <span className="text-2xl font-black text-slate-700">0{i+2}</span>
                <div className="flex-1">
                   <p className="font-bold text-lg">{song.title}</p>
-                  <p className="text-[10px] font-black text-billar-purple/60 uppercase">Mesa 4</p>
+                  <p className="text-[10px] font-black text-billar-purple/60 uppercase">{song.requestedBy}</p>
                </div>
             </div>
           ))}
@@ -353,122 +493,55 @@ const HistoryView = () => (
       </div>
     </div>
 
-    <div className="glass-card overflow-hidden border-none bg-white/5">
-      <table className="w-full text-left">
-        <thead>
-          <tr className="border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
-            <th className="px-6 py-4">Fecha / Hora</th>
-            <th className="px-6 py-4">Concepto</th>
-            <th className="px-6 py-4">Mesa / Cliente</th>
-            <th className="px-6 py-4">Atendido Por</th>
-            <th className="px-6 py-4 text-right">Monto</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-white/[0.02]">
-          {[
-            { time: '09 Mar, 16:45:22', concept: 'Cobro Mesa', target: 'Mesa 2', staff: 'Cajera', amount: 25000 },
-            { time: '09 Mar, 16:30:10', concept: 'Venta Bar', target: 'Cliente Directo', staff: 'Ana (Mesera)', amount: 12000 },
-            { time: '09 Mar, 15:55:05', concept: 'Abono Crédito', target: 'Don Roberto', staff: 'Administrador', amount: 20000 },
-            { time: '09 Mar, 15:20:00', concept: 'Cobro Mesa', target: 'Mesa 1', staff: 'Cajera', amount: 35500 },
-          ].map((item, i) => (
-            <tr key={i} className="hover:bg-white/[0.02] transition-all group">
-              <td className="px-6 py-4 text-xs font-mono text-slate-400">{item.time}</td>
-              <td className="px-6 py-4">
-                <span className={`text-[10px] font-black px-2 py-1 rounded uppercase tracking-tighter ${
-                  item.concept.includes('Mesa') ? 'bg-billar-neon/10 text-billar-neon' : 
-                  item.concept.includes('Bar') ? 'bg-purple-500/10 text-purple-400' : 
-                  'bg-amber-500/10 text-amber-400'
-                }`}>
-                  {item.concept}
-                </span>
-              </td>
-              <td className="px-6 py-4 text-sm font-bold">{item.target}</td>
-              <td className="px-6 py-4 text-xs text-slate-500 font-bold uppercase">{item.staff}</td>
-              <td className="px-6 py-4 text-right font-black text-white">${item.amount.toLocaleString()}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="glass-card overflow-hidden border-none bg-white/5 h-64 flex items-center justify-center">
+       <p className="text-slate-600 font-black uppercase tracking-widest text-sm">No hay registros hoy</p>
     </div>
   </div>
 );
 
 const CreditsView = () => (
-  <div className="p-8">
-    <div className="mb-8">
-      <h2 className="text-3xl font-black mb-1 italic">SISTEMA DE <span className="text-amber-400">CRÉDITOS</span></h2>
-      <p className="text-slate-400 text-sm">Registro de fiados y abonos de clientes frecuentes.</p>
-    </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      {/* Left: Client List */}
-      <div className="lg:col-span-2 space-y-4">
-        <div className="relative mb-6">
-          <input type="text" placeholder="Buscar cliente..." className="w-full neon-input pl-12 bg-white/5" />
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
-        </div>
-        
-        {[
-          { name: 'Don Roberto', debt: 45000, lastOrder: 'hace 2 días' },
-          { name: 'Andrés "El Flaco"', debt: 12000, lastOrder: 'hace 4 horas' },
-          { name: 'Ricardo Gómez', debt: 28000, lastOrder: 'hace 1 día' },
-        ].map((client, i) => (
-          <div key={i} className="glass-card p-6 flex items-center justify-between border-none bg-white/5 hover:bg-white/10">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-400/20 text-amber-400 rounded-full flex items-center justify-center font-black">
-                {client.name[0]}
-              </div>
-              <div>
-                <h4 className="font-bold">{client.name}</h4>
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Último consumo: {client.lastOrder}</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xl font-black text-amber-400 tracking-tighter">${client.debt.toLocaleString()}</p>
-              <button className="text-[10px] font-black text-billar-neon uppercase hover:underline">Ver Historial</button>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Right: Summary & Action */}
-      <div className="space-y-6">
-        <div className="glass-card p-6 bg-amber-400/5 border-amber-400/20">
-          <h3 className="text-sm font-black uppercase tracking-widest text-amber-400 mb-4">Resumen de deuda</h3>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Total por cobrar:</span>
-              <span className="font-bold text-white">$85.000</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-slate-400">Clientes activos:</span>
-              <span className="font-bold text-white">14</span>
-            </div>
-          </div>
-          <button className="w-full bg-amber-400 text-billar-dark font-black py-3 rounded-lg mt-6 shadow-lg shadow-amber-400/20 hover:scale-[1.02] transition-all">
-            REGISTRAR ABONO
-          </button>
-        </div>
-      </div>
-    </div>
+  <div className="p-8 text-center py-20">
+    <CreditCard size={64} className="mx-auto text-amber-500/20 mb-4" />
+    <h2 className="text-2xl font-black uppercase italic tracking-tighter">Próximamente</h2>
+    <p className="text-slate-500 text-sm">El sistema de créditos estará disponible pronto.</p>
   </div>
 );
 
 // --- Main App ---
 
 export default function App() {
-  const [user, setUser] = useState({ nombre: 'Jonathan Lopez', rol: ROLES.OWNER });
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState('login'); // login, register, dashboard
   const [currentView, setCurrentView] = useState('dashboard');
-  const [tables, setTables] = useState(INITIAL_TABLES);
-  const [queue, setQueue] = useState(INITIAL_QUEUE);
-  const [isTVMode, setIsTVMode] = useState(false);
+  const [tables, setTables] = useState([
+    { id: 1, name: 'Mesa 1', status: 'available' },
+    { id: 2, name: 'Mesa 2', status: 'available' },
+    { id: 3, name: 'Mesa 3', status: 'available' },
+    { id: 4, name: 'Mesa 4', status: 'available' },
+  ]);
+  const [queue, setQueue] = useState([]);
+  const [isTVMode, setIsTVMode] = useState(window.location.pathname === '/tv');
 
-  // Check URL hash or query for TV mode
+  // Load session from localStorage on start
   useEffect(() => {
-    if (window.location.pathname === '/tv') {
-      setIsTVMode(true);
+    const saved = localStorage.getItem('billar_user');
+    if (saved) {
+      setUser(JSON.parse(saved));
+      setView('dashboard');
     }
   }, []);
+
+  const handleLogin = (u) => {
+    setUser(u);
+    localStorage.setItem('billar_user', JSON.stringify(u));
+    setView('dashboard');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('billar_user');
+    setView('login');
+  };
 
   // Fetch queue every 5 seconds
   useEffect(() => {
@@ -495,9 +568,12 @@ export default function App() {
     return <TVView tables={tables} queue={queue} />;
   }
 
+  if (view === 'login') return <LoginView onLogin={handleLogin} onGoToRegister={() => setView('register')} />;
+  if (view === 'register') return <RegisterOwnerView onBack={() => setView('login')} />;
+
   return (
     <div className="min-h-screen bg-billar-dark flex flex-col">
-      <Navbar user={user} onLogout={() => console.log('Logout')} />
+      <Navbar user={user} onLogout={handleLogout} />
       
       <div className="flex flex-1">
         {/* Sidebar */}
@@ -551,7 +627,6 @@ export default function App() {
               {currentView === 'music' && <MusicView queue={queue} />}
               {currentView === 'credits' && <CreditsView />}
               {currentView === 'history' && <HistoryView />}
-              {/* Other views would be here */}
             </motion.div>
           </AnimatePresence>
         </main>
