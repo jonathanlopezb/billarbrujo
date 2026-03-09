@@ -329,6 +329,59 @@ const TVView = ({ tables, queue }) => (
   </div>
 );
 
+const HistoryView = () => (
+  <div className="p-8">
+    <div className="mb-8 flex justify-between items-end">
+      <div>
+        <h2 className="text-3xl font-black mb-1 italic">HISTORIAL Y <span className="text-billar-neon">CONTABILIDAD</span></h2>
+        <p className="text-slate-400 text-sm">Registros detallados con fecha y hora exacta.</p>
+      </div>
+      <div className="flex gap-2">
+         <button className="bg-white/5 text-xs font-bold px-4 py-2 rounded-lg border border-white/10 hover:bg-white/10 transition-all">EXPORTAR EXCEL</button>
+         <button className="bg-billar-neon/10 text-billar-neon text-xs font-bold px-4 py-2 rounded-lg border border-billar-neon/20 hover:bg-billar-neon/20 transition-all">CIERRE DE CAJA</button>
+      </div>
+    </div>
+
+    <div className="glass-card overflow-hidden border-none bg-white/5">
+      <table className="w-full text-left">
+        <thead>
+          <tr className="border-b border-white/5 text-[10px] font-black text-slate-500 uppercase tracking-widest">
+            <th className="px-6 py-4">Fecha / Hora</th>
+            <th className="px-6 py-4">Concepto</th>
+            <th className="px-6 py-4">Mesa / Cliente</th>
+            <th className="px-6 py-4">Atendido Por</th>
+            <th className="px-6 py-4 text-right">Monto</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-white/[0.02]">
+          {[
+            { time: '09 Mar, 16:45:22', concept: 'Cobro Mesa', target: 'Mesa 2', staff: 'Cajera', amount: 25000 },
+            { time: '09 Mar, 16:30:10', concept: 'Venta Bar', target: 'Cliente Directo', staff: 'Ana (Mesera)', amount: 12000 },
+            { time: '09 Mar, 15:55:05', concept: 'Abono Crédito', target: 'Don Roberto', staff: 'Administrador', amount: 20000 },
+            { time: '09 Mar, 15:20:00', concept: 'Cobro Mesa', target: 'Mesa 1', staff: 'Cajera', amount: 35500 },
+          ].map((item, i) => (
+            <tr key={i} className="hover:bg-white/[0.02] transition-all group">
+              <td className="px-6 py-4 text-xs font-mono text-slate-400">{item.time}</td>
+              <td className="px-6 py-4">
+                <span className={`text-[10px] font-black px-2 py-1 rounded uppercase tracking-tighter ${
+                  item.concept.includes('Mesa') ? 'bg-billar-neon/10 text-billar-neon' : 
+                  item.concept.includes('Bar') ? 'bg-purple-500/10 text-purple-400' : 
+                  'bg-amber-500/10 text-amber-400'
+                }`}>
+                  {item.concept}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-sm font-bold">{item.target}</td>
+              <td className="px-6 py-4 text-xs text-slate-500 font-bold uppercase">{item.staff}</td>
+              <td className="px-6 py-4 text-right font-black text-white">${item.amount.toLocaleString()}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
 const CreditsView = () => (
   <div className="p-8">
     <div className="mb-8">
@@ -465,6 +518,7 @@ export default function App() {
               {currentView === 'dashboard' && <DashboardView tables={tables} />}
               {currentView === 'music' && <MusicView queue={queue} />}
               {currentView === 'credits' && <CreditsView />}
+              {currentView === 'history' && <HistoryView />}
               {/* Other views would be here */}
             </motion.div>
           </AnimatePresence>
