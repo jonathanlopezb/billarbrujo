@@ -306,7 +306,7 @@ const TVView = ({ tables, queue }) => (
                 <iframe 
                   width="100%" 
                   height="60" 
-                  src="https://www.youtube.com/embed/f3S6TfGAs_Y?autoplay=1" 
+                  src={`https://www.youtube.com/embed/${queue[0]?.videoId || 'f3S6TfGAs_Y'}?autoplay=1`}
                   title="YouTube video player" 
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
                 />
@@ -468,6 +468,27 @@ export default function App() {
     if (window.location.pathname === '/tv') {
       setIsTVMode(true);
     }
+  }, []);
+
+  // Fetch queue every 5 seconds
+  useEffect(() => {
+    const fetchQueue = async () => {
+      try {
+        const res = await fetch('/api/queue');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setQueue(data.map(q => ({
+            id: q.id,
+            title: q.titulo,
+            requestedBy: q.solicitado_por,
+            videoId: q.video_id
+          })));
+        }
+      } catch (e) { console.error(e); }
+    };
+    fetchQueue();
+    const id = setInterval(fetchQueue, 5000);
+    return () => clearInterval(id);
   }, []);
 
   if (isTVMode) {

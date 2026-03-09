@@ -7,18 +7,36 @@ export default function MusicBox() {
   const [results, setResults] = useState([]);
   const [requested, setRequested] = useState([]);
 
-  // Mock search
-  const handleSearch = () => {
-    setResults([
-      { id: '1', title: 'Propuesta Indecente', artist: 'Romeo Santos' },
-      { id: '2', title: 'Noche de Entierro', artist: 'Daddy Yankee' },
-      { id: '3', title: 'Matador', artist: 'Los Fabulosos Cadillacs' },
-    ]);
+  // Real search using our serverless API
+  const handleSearch = async () => {
+    if (!search.trim()) return;
+    
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(search)}`);
+      const data = await response.json();
+      if (Array.isArray(data)) {
+        setResults(data);
+      }
+    } catch (error) {
+      console.error('Error buscando canciones:', error);
+    }
   };
 
-  const requestSong = (song) => {
-    setRequested([...requested, song.id]);
-    // In a real app, this would post to /api/queue
+  const requestSong = async (song) => {
+    try {
+      await fetch('/api/queue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo: song.title,
+          video_id: song.id,
+          solicitado_por: 'Celular Cliente' // Could be refined later
+        })
+      });
+      setRequested([...requested, song.id]);
+    } catch (error) {
+      console.error('Error solicitando canción:', error);
+    }
   };
 
   return (
