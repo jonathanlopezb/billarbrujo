@@ -300,6 +300,17 @@ const TVView = ({ tables, queue }) => (
              <p className="text-[10px] font-black text-billar-purple uppercase tracking-[0.3em] mb-2">Suena Ahora</p>
              <h4 className="text-2xl font-black mb-4">Cali Pachanguero</h4>
              <p className="text-sm font-bold text-white/40 uppercase">Grupo Niche</p>
+             
+             {/* Audio Player (Hidden) */}
+             <div className="mt-4 opacity-10 grayscale brightness-50">
+                <iframe 
+                  width="100%" 
+                  height="60" 
+                  src="https://www.youtube.com/embed/f3S6TfGAs_Y?autoplay=1" 
+                  title="YouTube video player" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                />
+             </div>
           </div>
        </div>
 
