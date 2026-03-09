@@ -298,8 +298,8 @@ const TVView = ({ tables, queue }) => (
           
           <div className="glass-card overflow-hidden bg-billar-purple/10 border-billar-purple/20 p-8 mb-12">
              <p className="text-[10px] font-black text-billar-purple uppercase tracking-[0.3em] mb-2">Suena Ahora</p>
-             <h4 className="text-2xl font-black mb-4">Cali Pachanguero</h4>
-             <p className="text-sm font-bold text-white/40 uppercase">Grupo Niche</p>
+             <h4 className="text-2xl font-black mb-4">{queue[0]?.title || 'Esperando canción...'}</h4>
+             <p className="text-sm font-bold text-white/40 uppercase">{queue[0]?.requestedBy || 'Billar El Divino Niño'}</p>
              
              {/* Audio Player (Hidden) */}
              <div className="mt-4 opacity-10 grayscale brightness-50">
