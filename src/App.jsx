@@ -264,9 +264,9 @@ const TVView = ({ tables, queue, onSongEnd }) => {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-billar-neon rounded-xl flex items-center justify-center shadow-neon-glow"><span className="text-3xl">🎱</span></div>
             <div><h1 className="text-3xl font-black italic uppercase underline decoration-billar-neon decoration-4 underline-offset-4">MESAS <span className="text-billar-neon">ACTIVAS</span></h1><p className="text-[10px] font-bold text-slate-500 tracking-[0.3em] uppercase">Billar El Divino Niño</p></div>
-          </div>
-          <div className="text-right"><p className="text-5xl font-black font-mono text-billar-neon leading-none">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
         </div>
+        <div className="text-right"><p className="text-2xl font-black font-mono text-billar-neon leading-none bg-white/5 py-2 px-4 rounded-xl">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
+      </div>
         <div className="flex-1 grid grid-cols-2 gap-4 h-full">
           {tables.map(table => (
             <div key={table.id} className={`glass-card p-4 flex flex-col relative overflow-hidden transition-all duration-500 ${table.estado === 'ocupada' ? 'bg-billar-neon/[0.03] border-billar-neon/30 shadow-neon-glow' : 'opacity-40 border-white/5'}`}>
@@ -312,8 +312,8 @@ const TVView = ({ tables, queue, onSongEnd }) => {
          </div>
          <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-3"><div className="bg-white p-1.5 rounded-lg"><QRCode value={window.location.origin + "/music-box"} size={54} /></div><p className="text-[10px] font-black uppercase leading-tight text-slate-500">¿TU CANCIÓN?<br/><span className="text-white text-[8px]">Escanea QR</span></p></div>
-            <p className="text-[10px] font-black text-billar-neon">BILLAR v2.0</p>
-         </div>
+          <p className="text-[10px] font-black text-billar-neon/40 italic">PRODUCIDO POR EL BRUJO</p>
+       </div>
       </div>
     </div>
   );
@@ -448,6 +448,15 @@ export default function App() {
     return () => clearInterval(id);
   }, []);
 
+  const handleMarkAsPlayed = async (id) => {
+    await fetch('/api/queue', { 
+      method: 'PATCH', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ id, action: 'played' }) 
+    });
+    fetchData();
+  };
+
   const handleUpdateScore = async (partidaId, score1, score2) => {
     await fetch('/api/tables', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partidaId, score1, score2 }) });
     fetchData();
@@ -471,7 +480,7 @@ export default function App() {
     setSaleModalOpen(false); fetchData();
   };
 
-  if (isTVMode) return <TVView tables={tables} queue={queue} onSongEnd={fetchData} />;
+  if (isTVMode) return <TVView tables={tables} queue={queue} onSongEnd={handleMarkAsPlayed} />;
   if (view === 'login') return <LoginView onLogin={u => { setUser(u); setView('dashboard'); localStorage.setItem('billar_user', JSON.stringify(u)); }} onGoToRegister={() => setView('register')} />;
   if (view === 'register') return <RegisterOwnerView onBack={() => setView('login')} />;
 
