@@ -17,7 +17,11 @@ import {
   Settings,
   Lock,
   User,
-  Key
+  Key,
+  ChevronUp,
+  ChevronDown,
+  Trash2,
+  CheckCircle
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
@@ -329,100 +333,157 @@ const DashboardView = ({ tables }) => (
   </div>
 );
 
-const MusicView = ({ queue }) => (
-  <div className="p-8 max-w-4xl mx-auto">
-    <div className="mb-12 text-center">
-      <h2 className="text-4xl font-black mb-2 uppercase italic tracking-tighter">
-        Rockola <span className="text-billar-purple">Digital</span>
-      </h2>
-      <p className="text-slate-400">Tus clientes piden la música desde su celular.</p>
-    </div>
+const MusicView = ({ queue, user, onUpdateQueue }) => {
+  const isAdmin = user?.rol === 'dueño' || user?.rol === 'admin';
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-      <div className="glass-card p-8 flex flex-col items-center justify-center">
-        <div className="bg-white p-4 rounded-2xl shadow-neon-glow mb-6">
-          <QRCode 
-            value={window.location.origin + "/music-box"} 
-            size={200}
-            fgColor="#0a0b10"
-          />
-        </div>
-        <div className="text-center space-y-2">
-          <p className="font-black text-xl">ESCANEAME</p>
-          <div className="w-12 h-1 bg-billar-purple mx-auto rounded-full" />
-          <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">PARA ESCOGER CANCIÓN</p>
-        </div>
+  const handleAction = async (id, action) => {
+    try {
+      if (action === 'delete') {
+        await fetch(`/api/queue?id=${id}`, { method: 'DELETE' });
+      } else {
+        await fetch('/api/queue', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, action })
+        });
+      }
+      onUpdateQueue(); // Refresh the list
+    } catch (e) {
+      console.error('Error actualizando cola:', e);
+    }
+  };
+
+  return (
+    <div className="p-8 max-w-4xl mx-auto">
+      <div className="mb-12 text-center">
+        <h2 className="text-4xl font-black mb-2 uppercase italic tracking-tighter">
+          Rockola <span className="text-billar-purple">Digital</span>
+        </h2>
+        <p className="text-slate-400">Tus clientes piden la música desde su celular.</p>
       </div>
 
-      <div className="space-y-6">
-        <h3 className="text-lg font-black flex items-center gap-2">
-          <Music className="text-billar-purple" /> COLA DE REPRODUCCIÓN
-        </h3>
-        <div className="space-y-3">
-          {queue.length > 0 ? queue.map((song, i) => (
-            <div key={song.id} className="glass-card p-4 flex items-center gap-4 bg-white/5 border-none">
-              <div className="w-10 h-10 bg-billar-purple/20 flex items-center justify-center rounded-lg text-billar-purple font-black">
-                {i + 1}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div className="glass-card p-8 flex flex-col items-center justify-center">
+          <div className="bg-white p-4 rounded-2xl shadow-neon-glow mb-6">
+            <QRCode 
+              value={window.location.origin + "/music-box"} 
+              size={200}
+              fgColor="#0a0b10"
+            />
+          </div>
+          <div className="text-center space-y-2">
+            <p className="font-black text-xl">ESCANEAME</p>
+            <div className="w-12 h-1 bg-billar-purple mx-auto rounded-full" />
+            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">PARA ESCOGER CANCIÓN</p>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <h3 className="text-lg font-black flex items-center gap-2">
+            <Music className="text-billar-purple" /> COLA DE REPRODUCCIÓN
+          </h3>
+          <div className="space-y-3">
+            {queue.length > 0 ? queue.map((song, i) => (
+              <div key={song.id} className="glass-card p-4 flex items-center justify-between bg-white/5 border-none">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-billar-purple/20 flex items-center justify-center rounded-lg text-billar-purple font-black">
+                    {i + 1}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm line-clamp-1">{song.title}</p>
+                    <p className="text-[10px] text-slate-500 uppercase font-black">{song.requestedBy}</p>
+                  </div>
+                </div>
+
+                {isAdmin && (
+                  <div className="flex items-center gap-1">
+                    <button 
+                      onClick={() => handleAction(song.id, 'move_up')}
+                      className="p-1.5 hover:bg-white/10 rounded-md text-slate-400 hover:text-white transition-all"
+                      title="Subir"
+                    >
+                      <ChevronUp size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleAction(song.id, 'move_down')}
+                      className="p-1.5 hover:bg-white/10 rounded-md text-slate-400 hover:text-white transition-all"
+                      title="Bajar"
+                    >
+                      <ChevronDown size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleAction(song.id, 'played')}
+                      className="p-1.5 hover:bg-white/10 rounded-md text-emerald-500 hover:bg-emerald-500/20 transition-all"
+                      title="Marcar como sonada"
+                    >
+                      <CheckCircle size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleAction(song.id, 'delete')}
+                      className="p-1.5 hover:bg-white/10 rounded-md text-red-500 hover:bg-red-500/20 transition-all"
+                      title="Eliminar"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="font-bold text-sm">{song.title}</p>
-                <p className="text-[10px] text-slate-500 uppercase font-black">Pedido por: {song.requestedBy}</p>
-              </div>
-            </div>
-          )) : (
-            <p className="text-center text-slate-600 py-10 font-bold uppercase text-xs">No hay canciones en cola</p>
-          )}
+            )) : (
+              <p className="text-center text-slate-600 py-10 font-bold uppercase text-xs">No hay canciones en cola</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const TVView = ({ tables, queue }) => (
-  <div className="fixed inset-0 bg-[#05060a] z-[100] flex overflow-hidden">
-    <div className="w-2/3 p-12 overflow-hidden border-r border-white/5">
-      <div className="flex justify-between items-center mb-16">
-        <div className="flex items-center gap-4">
-          <span className="text-5xl">🎱</span>
-          <h1 className="text-5xl font-black tracking-tighter italic uppercase underline decoration-billar-neon decoration-8 underline-offset-8">
+  <div className="min-h-screen bg-[#05060a] z-[100] flex flex-col lg:flex-row overflow-x-hidden">
+    {/* Left Side: Games - Full width on mobile, 2/3 on large screens */}
+    <div className="flex-1 lg:w-2/3 p-4 md:p-8 lg:p-12 overflow-y-auto lg:overflow-hidden border-b lg:border-b-0 lg:border-r border-white/5">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-16 gap-4">
+        <div className="flex items-center gap-3 md:gap-4">
+          <span className="text-3xl md:text-5xl">🎱</span>
+          <h1 className="text-2xl md:text-5xl font-black tracking-tighter italic uppercase underline decoration-billar-neon decoration-4 md:decoration-8 underline-offset-4 md:underline-offset-8">
             MESAS ACTIVAS
           </h1>
         </div>
-        <div className="text-right">
-          <p className="text-6xl font-black font-mono text-billar-neon">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-          <p className="text-sm font-bold text-slate-500 tracking-[0.5em] uppercase">Billar El Divino Niño</p>
+        <div className="text-left md:text-right">
+          <p className="text-4xl md:text-6xl font-black font-mono text-billar-neon leading-none">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+          <p className="text-[10px] md:text-sm font-bold text-slate-500 tracking-[0.2em] md:tracking-[0.5em] uppercase">Billar El Divino Niño</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-8 lg:gap-12">
         {tables.slice(0, 4).map(table => (
-          <div key={table.id} className={`glass-card p-10 relative overflow-hidden ${table.status === 'playing' ? 'bg-billar-neon/5 border-billar-neon/20 shadow-neon-glow' : 'opacity-40'}`}>
-            <h3 className="text-3xl font-black mb-8 flex items-center gap-4">
+          <div key={table.id} className={`glass-card p-6 md:p-10 relative overflow-hidden ${table.status === 'playing' ? 'bg-billar-neon/5 border-billar-neon/20 shadow-neon-glow' : 'opacity-40'}`}>
+            <h3 className="text-xl md:text-3xl font-black mb-4 md:mb-8 flex items-center gap-3">
               {table.name}
-              {table.status === 'playing' && <div className="w-3 h-3 bg-billar-neon rounded-full animate-ping" />}
+              {table.status === 'playing' && <div className="w-2 h-2 md:w-3 md:h-3 bg-billar-neon rounded-full animate-ping" />}
             </h3>
 
             {table.status === 'playing' ? (
-              <div className="space-y-10">
-                <div className="flex justify-between items-center gap-8">
-                  <div className="flex-1 text-center space-y-2">
-                    <p className="text-6xl font-black">{table.score?.[0] || 0}</p>
-                    <p className="text-xl font-bold text-slate-400 uppercase tracking-widest">{table.players?.[0] || '---'}</p>
+              <div className="space-y-6 md:space-y-10">
+                <div className="flex justify-between items-center gap-4 md:gap-8">
+                  <div className="flex-1 text-center space-y-1 md:space-y-2">
+                    <p className="text-4xl md:text-6xl font-black">{table.score?.[0] || 0}</p>
+                    <p className="text-xs md:text-xl font-bold text-slate-400 uppercase tracking-widest truncate">{table.players?.[0] || '---'}</p>
                   </div>
-                  <div className="text-2xl font-black text-slate-700">VS</div>
-                  <div className="flex-1 text-center space-y-2">
-                    <p className="text-6xl font-black">{table.score?.[1] || 0}</p>
-                    <p className="text-xl font-bold text-slate-400 uppercase tracking-widest">{table.players?.[1] || '---'}</p>
+                  <div className="text-lg md:text-2xl font-black text-slate-700 italic">VS</div>
+                  <div className="flex-1 text-center space-y-1 md:space-y-2">
+                    <p className="text-4xl md:text-6xl font-black">{table.score?.[1] || 0}</p>
+                    <p className="text-xs md:text-xl font-bold text-slate-400 uppercase tracking-widest truncate">{table.players?.[1] || '---'}</p>
                   </div>
                 </div>
-                <div className="flex items-center justify-center gap-4 bg-white/5 py-3 rounded-2xl">
-                   <Clock className="text-billar-neon" size={32} />
-                   <p className="text-4xl font-black font-mono tracking-tighter text-white/80">00:00:00</p>
+                <div className="flex items-center justify-center gap-2 md:gap-4 bg-white/5 py-2 md:py-3 rounded-xl md:rounded-2xl">
+                   <Clock className="text-billar-neon" size={20} />
+                   <p className="text-2xl md:text-4xl font-black font-mono tracking-tighter text-white/80">00:00:00</p>
                 </div>
               </div>
             ) : (
-              <div className="h-48 flex items-center justify-center">
-                <p className="text-2xl font-black text-slate-600 tracking-widest">DISPONIBLE</p>
+              <div className="h-32 md:h-48 flex items-center justify-center border-2 border-dashed border-white/5 rounded-2xl">
+                <p className="text-lg md:text-2xl font-black text-slate-600 tracking-widest">DISPONIBLE</p>
               </div>
             )}
           </div>
@@ -430,19 +491,20 @@ const TVView = ({ tables, queue }) => (
       </div>
     </div>
 
-    <div className="w-1/3 bg-billar-card/80 p-12 flex flex-col">
-       <div className="mb-12">
-          <h2 className="text-3xl font-black italic tracking-tighter mb-8 flex items-center gap-3">
-             <Music className="text-billar-purple" size={32} />
+    {/* Right Side: Music - 1/3 on large screens, scrollable on mobile */}
+    <div className="w-full lg:w-1/3 bg-billar-card/80 p-6 md:p-8 lg:p-12 flex flex-col">
+       <div className="mb-8 md:mb-12">
+          <h2 className="text-2xl md:text-3xl font-black italic tracking-tighter mb-6 md:mb-8 flex items-center gap-3">
+             <Music className="text-billar-purple" size={24} md:size={32} />
              LISTA DE <span className="text-billar-purple">MÚSICA</span>
           </h2>
           
-          <div className="glass-card overflow-hidden bg-billar-purple/10 border-billar-purple/20 p-8 mb-12">
+          <div className="glass-card overflow-hidden bg-billar-purple/10 border-billar-purple/20 p-6 md:p-8 mb-8 md:mb-12">
              <p className="text-[10px] font-black text-billar-purple uppercase tracking-[0.3em] mb-2">Suena Ahora</p>
-             <h4 className="text-2xl font-black mb-4">{queue[0]?.title || 'Esperando canción...'}</h4>
-             <p className="text-sm font-bold text-white/40 uppercase">{queue[0]?.requestedBy || 'Billar El Divino Niño'}</p>
+             <h4 className="text-xl md:text-2xl font-black mb-2 md:mb-4 line-clamp-2 leading-tight">{queue[0]?.title || 'Esperando canción...'}</h4>
+             <p className="text-xs md:text-sm font-bold text-white/40 uppercase truncate">{queue[0]?.requestedBy || 'Billar El Divino Niño'}</p>
              
-             <div className="mt-4 opacity-10 grayscale brightness-50">
+             <div className="mt-4 opacity-10 grayscale brightness-50 rounded-lg overflow-hidden">
                 <iframe 
                   width="100%" 
                   height="60" 
@@ -454,26 +516,28 @@ const TVView = ({ tables, queue }) => (
           </div>
        </div>
 
-       <div className="flex-1 space-y-4">
-          <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-6">Siguientes Canciones</p>
-          {queue.slice(1, 5).map((song, i) => (
-            <div key={i} className="flex items-center gap-6 p-4 rounded-2xl hover:bg-white/5 transition-all">
-               <span className="text-2xl font-black text-slate-700">0{i+2}</span>
-               <div className="flex-1">
-                  <p className="font-bold text-lg">{song.title}</p>
-                  <p className="text-[10px] font-black text-billar-purple/60 uppercase">{song.requestedBy}</p>
+       <div className="flex-1 space-y-3 md:space-y-4 mb-8">
+          <p className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Siguientes Canciones</p>
+          {queue.slice(1, 4).length > 0 ? queue.slice(1, 4).map((song, i) => (
+            <div key={i} className="flex items-center gap-4 md:gap-6 p-3 md:p-4 rounded-xl md:rounded-2xl hover:bg-white/5 transition-all bg-white/[0.02]">
+               <span className="text-xl md:text-2xl font-black text-slate-700">0{i+2}</span>
+               <div className="flex-1 overflow-hidden">
+                  <p className="font-bold text-sm md:text-lg truncate">{song.title}</p>
+                  <p className="text-[10px] font-black text-billar-purple/60 uppercase truncate">{song.requestedBy}</p>
                </div>
             </div>
-          ))}
+          )) : (
+            <p className="text-[10px] font-bold text-slate-700 uppercase p-4 text-center border border-dashed border-white/5 rounded-xl">Cola vacía</p>
+          )}
        </div>
 
-       <div className="mt-auto pt-8 border-t border-white/5 flex items-center gap-6">
-          <div className="bg-white p-2 rounded-lg">
-             <QRCode value={window.location.origin + "/music-box"} size={80} />
+       <div className="mt-auto pt-6 md:pt-8 border-t border-white/5 flex items-center gap-4 md:gap-6">
+          <div className="bg-white p-2 rounded-lg shrink-0">
+             <QRCode value={window.location.origin + "/music-box"} size={60} md:size={80} />
           </div>
           <div>
-            <p className="text-sm font-black uppercase tracking-tighter">¿Quieres tu canción?</p>
-            <p className="text-xs text-slate-500">Escanea el código para pedirla gratis.</p>
+            <p className="text-xs md:text-sm font-black uppercase tracking-tighter">¿Quieres tu canción?</p>
+            <p className="text-[10px] md:text-xs text-slate-500">Escanea el código QR.</p>
           </div>
        </div>
     </div>
@@ -543,22 +607,23 @@ export default function App() {
     setView('login');
   };
 
+  const fetchQueue = async () => {
+    try {
+      const res = await fetch('/api/queue');
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setQueue(data.map(q => ({
+          id: q.id,
+          title: q.titulo,
+          requestedBy: q.solicitado_por,
+          videoId: q.video_id
+        })));
+      }
+    } catch (e) { console.error(e); }
+  };
+
   // Fetch queue every 5 seconds
   useEffect(() => {
-    const fetchQueue = async () => {
-      try {
-        const res = await fetch('/api/queue');
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          setQueue(data.map(q => ({
-            id: q.id,
-            title: q.titulo,
-            requestedBy: q.solicitado_por,
-            videoId: q.video_id
-          })));
-        }
-      } catch (e) { console.error(e); }
-    };
     fetchQueue();
     const id = setInterval(fetchQueue, 5000);
     return () => clearInterval(id);
@@ -624,7 +689,7 @@ export default function App() {
               transition={{ duration: 0.2 }}
             >
               {currentView === 'dashboard' && <DashboardView tables={tables} />}
-              {currentView === 'music' && <MusicView queue={queue} />}
+              {currentView === 'music' && <MusicView queue={queue} user={user} onUpdateQueue={fetchQueue} />}
               {currentView === 'credits' && <CreditsView />}
               {currentView === 'history' && <HistoryView />}
             </motion.div>
