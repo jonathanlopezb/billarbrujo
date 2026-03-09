@@ -308,29 +308,43 @@ const TVView = ({ tables, queue, onSongEnd }) => {
           ))}
         </div>
       </div>
-      <div className="flex-1 bg-billar-card/30 p-6 flex flex-col">
+      <div className="w-[350px] bg-billar-card/30 p-8 flex flex-col border-l border-white/5">
          <div className="flex items-center gap-3 mb-6"><Music className="text-billar-purple" size={24} /><h2 className="text-xl font-black italic tracking-tighter">LISTA DE <span className="text-billar-purple">MÚSICA</span></h2></div>
-         <div className="glass-card overflow-hidden bg-billar-purple/5 border-billar-purple/20 p-4 mb-6">
-            <h4 className="text-lg font-black line-clamp-1 leading-tight">{queue[0]?.title || 'Esperando canción...'}</h4>
-            <p className="text-[10px] font-bold text-white/40 uppercase truncate">{queue[0]?.requestedBy || 'Billar El Divino Niño'}</p>
-            <div className="mt-3 rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center border border-white/5">
+         
+         <div className="glass-card overflow-hidden bg-billar-purple/5 border-billar-purple/20 p-4 mb-8">
+            <h4 className="text-sm font-black line-clamp-2 leading-tight mb-1">{queue[0]?.title || 'Esperando canción...'}</h4>
+            <p className="text-[10px] font-bold text-white/40 uppercase truncate mb-4">{queue[0]?.requestedBy || 'Billar El Divino Niño'}</p>
+            <div className="rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center border border-white/5">
               {queue[0] ? (
                 <YouTube videoId={queue[0].videoId} onEnd={() => onSongEnd(queue[0].id)} className="w-full h-full" opts={{ width: '100%', height: '100%', playerVars: { autoplay: 1, controls: 0 } }} />
               ) : ( <div className="text-slate-700 text-[10px] font-black uppercase tracking-widest">Cola vacía</div> )}
             </div>
          </div>
-         <div className="flex-1 flex flex-col gap-2 overflow-hidden">
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Siguientes</p>
-            {queue.slice(1, 6).map((song, i) => (
-              <div key={song.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-white/[0.02] border border-white/5">
-                 <span className="text-xs font-black text-slate-800">0{i+2}</span>
-                 <div className="flex-1 min-w-0"><p className="font-bold text-xs truncate">{song.title}</p><p className="text-[8px] font-black text-billar-purple/60 uppercase truncate">{song.requestedBy}</p></div>
-              </div>
-            ))}
+
+         <div className="flex-1 flex flex-col gap-3 min-h-0">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1 border-b border-white/5 pb-2">Próximos Temas</p>
+            <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+              {queue.slice(1, 8).map((song, i) => (
+                <div key={song.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/5">
+                   <span className="text-xs font-black text-slate-700">0{i+2}</span>
+                   <div className="flex-1 min-w-0">
+                      <p className="font-bold text-[11px] truncate leading-tight">{song.title}</p>
+                      <p className="text-[9px] font-black text-billar-purple/60 uppercase truncate">{song.requestedBy}</p>
+                   </div>
+                </div>
+              ))}
+              {queue.length <= 1 && (
+                <div className="flex-1 flex flex-col items-center justify-center opacity-20 py-10">
+                  <Music size={32} className="mb-2" />
+                  <p className="text-[9px] font-black uppercase">Sin temas en cola</p>
+                </div>
+              )}
+            </div>
          </div>
-         <div className="mt-6 pt-6 border-t border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-3"><div className="bg-white p-1.5 rounded-lg"><QRCode value={window.location.origin + "/music-box"} size={54} /></div><p className="text-[10px] font-black uppercase leading-tight text-slate-500">¿TU CANCIÓN?<br/><span className="text-white text-[8px]">Escanea QR</span></p></div>
-          <p className="text-[10px] font-black text-billar-neon/40 italic">PRODUCIDO POR EL BRUJO</p>
+
+         <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-3"><div className="bg-white p-1.5 rounded-lg"><QRCode value={window.location.origin + "/music-box"} size={54} /></div><p className="text-[10px] font-black uppercase leading-tight text-slate-500">¿PIDE TU<br/>CANCIÓN?<br/><span className="text-white text-[8px]">Escanea QR</span></p></div>
+            <p className="text-[9px] font-black text-billar-neon/40 italic text-right leading-none uppercase tracking-tighter">Producido por<br/>El Brujo</p>
        </div>
       </div>
     </div>
