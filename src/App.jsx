@@ -24,6 +24,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
+import YouTube from 'react-youtube';
 
 // Constants
 const ROLES = {
@@ -438,9 +439,8 @@ const MusicView = ({ queue, user, onUpdateQueue }) => {
   );
 };
 
-const TVView = ({ tables, queue }) => (
+const TVView = ({ tables, queue, onSongEnd }) => (
   <div className="min-h-screen bg-[#05060a] z-[100] flex flex-col lg:flex-row overflow-x-hidden">
-    {/* Left Side: Games - Full width on mobile, 2/3 on large screens */}
     <div className="flex-1 lg:w-2/3 p-4 md:p-8 lg:p-12 overflow-y-auto lg:overflow-hidden border-b lg:border-b-0 lg:border-r border-white/5">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-16 gap-4">
         <div className="flex items-center gap-3 md:gap-4">
@@ -491,11 +491,10 @@ const TVView = ({ tables, queue }) => (
       </div>
     </div>
 
-    {/* Right Side: Music - 1/3 on large screens, scrollable on mobile */}
     <div className="w-full lg:w-1/3 bg-billar-card/80 p-6 md:p-8 lg:p-12 flex flex-col">
        <div className="mb-8 md:mb-12">
           <h2 className="text-2xl md:text-3xl font-black italic tracking-tighter mb-6 md:mb-8 flex items-center gap-3">
-             <Music className="text-billar-purple" size={24} md:size={32} />
+             <Music className="text-billar-purple" size={32} />
              LISTA DE <span className="text-billar-purple">MÚSICA</span>
           </h2>
           
@@ -504,22 +503,33 @@ const TVView = ({ tables, queue }) => (
              <h4 className="text-xl md:text-2xl font-black mb-2 md:mb-4 line-clamp-2 leading-tight">{queue[0]?.title || 'Esperando canción...'}</h4>
              <p className="text-xs md:text-sm font-bold text-white/40 uppercase truncate">{queue[0]?.requestedBy || 'Billar El Divino Niño'}</p>
              
-             <div className="mt-4 opacity-10 grayscale brightness-50 rounded-lg overflow-hidden">
-                <iframe 
-                  width="100%" 
-                  height="60" 
-                  src={`https://www.youtube.com/embed/${queue[0]?.videoId || 'f3S6TfGAs_Y'}?autoplay=1`}
-                  title="YouTube video player" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                />
+             <div className="mt-4 rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center">
+                {queue[0] ? (
+                  <YouTube 
+                    videoId={queue[0].videoId} 
+                    onEnd={() => onSongEnd(queue[0].id)}
+                    className="w-full h-full"
+                    opts={{
+                      width: '100%',
+                      height: '100%',
+                      playerVars: {
+                        autoplay: 1,
+                        controls: 0,
+                        modestbranding: 1
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="text-slate-700 text-xs font-bold uppercase tracking-widest">Listo para reproducir</div>
+                )}
              </div>
           </div>
        </div>
 
-       <div className="flex-1 space-y-3 md:space-y-4 mb-8">
+       <div className="flex-1 space-y-3 md:space-y-4 mb-8 overflow-y-auto">
           <p className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Siguientes Canciones</p>
           {queue.slice(1, 4).length > 0 ? queue.slice(1, 4).map((song, i) => (
-            <div key={i} className="flex items-center gap-4 md:gap-6 p-3 md:p-4 rounded-xl md:rounded-2xl hover:bg-white/5 transition-all bg-white/[0.02]">
+            <div key={i} className="flex items-center gap-4 md:gap-6 p-3 md:p-4 rounded-xl md:rounded-2xl bg-white/[0.02]">
                <span className="text-xl md:text-2xl font-black text-slate-700">0{i+2}</span>
                <div className="flex-1 overflow-hidden">
                   <p className="font-bold text-sm md:text-lg truncate">{song.title}</p>
@@ -533,7 +543,7 @@ const TVView = ({ tables, queue }) => (
 
        <div className="mt-auto pt-6 md:pt-8 border-t border-white/5 flex items-center gap-4 md:gap-6">
           <div className="bg-white p-2 rounded-lg shrink-0">
-             <QRCode value={window.location.origin + "/music-box"} size={60} md:size={80} />
+             <QRCode value={window.location.origin + "/music-box"} size={60} />
           </div>
           <div>
             <p className="text-xs md:text-sm font-black uppercase tracking-tighter">¿Quieres tu canción?</p>
@@ -586,7 +596,7 @@ export default function App() {
   const [queue, setQueue] = useState([]);
   const [isTVMode, setIsTVMode] = useState(window.location.pathname === '/tv');
 
-  // Load session from localStorage on start
+  // Fetch session on startup
   useEffect(() => {
     const saved = localStorage.getItem('billar_user');
     if (saved) {
@@ -622,15 +632,26 @@ export default function App() {
     } catch (e) { console.error(e); }
   };
 
-  // Fetch queue every 5 seconds
+  // Poll queue
   useEffect(() => {
     fetchQueue();
     const id = setInterval(fetchQueue, 5000);
     return () => clearInterval(id);
   }, []);
 
+  const handleSongEnd = async (id) => {
+    try {
+      await fetch('/api/queue', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'played' })
+      });
+      fetchQueue();
+    } catch (e) { console.error('Error al terminar canción:', e); }
+  };
+
   if (isTVMode) {
-    return <TVView tables={tables} queue={queue} />;
+    return <TVView tables={tables} queue={queue} onSongEnd={handleSongEnd} />;
   }
 
   if (view === 'login') return <LoginView onLogin={handleLogin} onGoToRegister={() => setView('register')} />;
@@ -641,7 +662,6 @@ export default function App() {
       <Navbar user={user} onLogout={handleLogout} />
       
       <div className="flex flex-1">
-        {/* Sidebar */}
         <aside className="w-64 border-r border-white/5 bg-billar-card/30 hidden lg:block">
           <div className="py-6">
             <SidebarItem 
@@ -669,8 +689,8 @@ export default function App() {
               onClick={() => setCurrentView('credits')} 
             />
             <div className="px-6 py-8 mt-12 bg-billar-purple/5 mx-4 rounded-2xl border border-billar-purple/10">
-               <div                     onClick={() => window.open('/tv', '_blank')}
- className="flex items-center gap-2 text-billar-purple font-black text-xs uppercase tracking-widest mb-2 cursor-pointer hover:underline">
+               <div onClick={() => window.open('/tv', '_blank')}
+                 className="flex items-center gap-2 text-billar-purple font-black text-xs uppercase tracking-widest mb-2 cursor-pointer hover:underline">
                   <Monitor size={14} /> Abrir Vista TV
                </div>
                <p className="text-[10px] text-slate-500">Configura la pantalla grande para tus clientes.</p>
@@ -678,7 +698,6 @@ export default function App() {
           </div>
         </aside>
 
-        {/* View Content */}
         <main className="flex-1 bg-white/[0.02]">
           <AnimatePresence mode="wait">
             <motion.div
