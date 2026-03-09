@@ -1,5 +1,8 @@
 import { neon } from '@neondatabase/serverless';
 
-const sql = neon(import.meta.env.VITE_DATABASE_URL || process.env.DATABASE_URL);
+const dbUrl = (typeof process !== 'undefined' && process.env?.DATABASE_URL) || 
+               (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DATABASE_URL);
+
+const sql = neon(dbUrl);
 
 export default sql;

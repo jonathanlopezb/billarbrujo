@@ -60,6 +60,24 @@ const StatsGrid = ({ tables = [] }) => (
   </div>
 );
 
+const Timer = ({ start }) => {
+  const [elapsed, setElapsed] = useState('00:00:00');
+  useEffect(() => {
+    if (!start) return;
+    const update = () => {
+      const diff = Math.floor((new Date() - new Date(start)) / 1000);
+      const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+      const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+      const s = (diff % 60).toString().padStart(2, '0');
+      setElapsed(`${h}:${m}:${s}`);
+    };
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [start]);
+  return <span className="font-mono">{elapsed}</span>;
+};
+
 const TableCard = ({ table, onStartMatch, onFinishMatch, onAddConsumo }) => {
   const isPlaying = table?.estado === 'ocupada';
   return (
@@ -82,7 +100,7 @@ const TableCard = ({ table, onStartMatch, onFinishMatch, onAddConsumo }) => {
               </div>
             </div>
             <div className="flex items-center justify-between text-slate-400">
-               <div className="flex items-center gap-2"><Clock size={14} className="text-billar-neon" /><span className="text-sm font-mono tracking-tighter">ELAPSED...</span></div>
+               <div className="flex items-center gap-2"><Clock size={14} className="text-billar-neon" /><Timer start={table.inicio} /></div>
                <p className="text-[10px] font-black text-billar-purple italic">POR PARTIDAS</p>
             </div>
           </div>
@@ -256,35 +274,35 @@ const TVView = ({ tables, queue, onSongEnd }) => {
     <div className="h-screen w-screen bg-[#05060a] z-[100] flex overflow-hidden text-white font-sans relative">
       <AnimatePresence>
         {tvMsg && (
-          <motion.div initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }} className="absolute top-0 left-0 right-0 bg-billar-neon text-black py-2 text-center font-black z-[200] italic shadow-2xl">📢 {tvMsg}</motion.div>
+          <motion.div initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }} className="absolute top-0 left-0 right-0 bg-billar-neon text-black py-4 text-3xl text-center font-black z-[200] italic shadow-2xl">📢 {tvMsg}</motion.div>
         )}
       </AnimatePresence>
-      <div className="flex-[2] p-6 flex flex-col border-r border-white/5">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-billar-neon rounded-xl flex items-center justify-center shadow-neon-glow"><span className="text-3xl">🎱</span></div>
-            <div><h1 className="text-3xl font-black italic uppercase underline decoration-billar-neon decoration-4 underline-offset-4">MESAS <span className="text-billar-neon">ACTIVAS</span></h1><p className="text-[10px] font-bold text-slate-500 tracking-[0.3em] uppercase">Billar El Divino Niño</p></div>
+      <div className="flex-[2] p-10 flex flex-col border-r border-white/5">
+        <div className="flex justify-between items-center mb-12">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 bg-billar-neon rounded-2xl flex items-center justify-center shadow-neon-glow"><span className="text-4xl">🎱</span></div>
+            <div><h1 className="text-5xl font-black italic uppercase underline decoration-billar-neon decoration-8 underline-offset-[12px]">MESAS <span className="text-billar-neon">ACTIVAS</span></h1><p className="text-xs font-bold text-slate-500 tracking-[0.4em] uppercase mt-2">Billar El Divino Niño</p></div>
         </div>
-        <div className="text-right"><p className="text-2xl font-black font-mono text-billar-neon leading-none bg-white/5 py-2 px-4 rounded-xl">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
+        <div className="text-right"><p className="text-3xl font-black font-mono text-billar-neon leading-none bg-white/5 py-3 px-6 rounded-2xl border border-white/5">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p></div>
       </div>
-        <div className="flex-1 grid grid-cols-2 gap-4 h-full">
+        <div className="flex-1 grid grid-cols-2 gap-8 h-full">
           {tables.map(table => (
-            <div key={table.id} className={`glass-card p-4 flex flex-col relative overflow-hidden transition-all duration-500 ${table.estado === 'ocupada' ? 'bg-billar-neon/[0.03] border-billar-neon/30 shadow-neon-glow' : 'opacity-40 border-white/5'}`}>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-xl font-black">{table.nombre}</h3>
-                <span className={`text-[8px] font-black px-2 py-0.5 rounded ${table.estado === 'ocupada' ? 'bg-billar-neon text-black' : 'bg-white/10 text-slate-400'}`}>{table.estado === 'ocupada' ? 'OCUPADA' : 'DISPONIBLE'}</span>
+            <div key={table.id} className={`glass-card p-8 flex flex-col relative overflow-hidden transition-all duration-500 border-none ${table.estado === 'ocupada' ? 'bg-billar-neon/[0.05] shadow-neon-glow' : 'opacity-30 bg-black/40'}`}>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-4xl font-black italic">{table.nombre}</h3>
+                <span className={`text-[10px] font-black px-3 py-1 rounded-full ${table.estado === 'ocupada' ? 'bg-billar-neon text-black' : 'bg-white/10 text-slate-400'}`}>{table.estado === 'ocupada' ? 'OCUPADA' : 'DISPONIBLE'}</span>
               </div>
               {table.estado === 'ocupada' ? (
-                <div className="flex-1 flex flex-col justify-center gap-4">
+                <div className="flex-1 flex flex-col justify-center gap-8">
                   <div className="flex justify-around items-center">
-                    <div className="text-center"><p className="text-5xl font-black text-white">{table.score1 || 0}</p><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{table.jugador1 || '---'}</p></div>
-                    <div className="text-lg font-black text-slate-800 italic">VS</div>
-                    <div className="text-center"><p className="text-5xl font-black text-white">{table.score2 || 0}</p><p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{table.jugador2 || '---'}</p></div>
+                    <div className="text-center space-y-2"><p className="text-8xl font-black text-white tracking-tighter">{table.score1 || 0}</p><p className="text-sm font-black text-slate-400 uppercase tracking-widest truncate max-w-[150px]">{table.jugador1 || '---'}</p></div>
+                    <div className="text-2xl font-black text-slate-800 italic">VS</div>
+                    <div className="text-center space-y-2"><p className="text-8xl font-black text-white tracking-tighter">{table.score2 || 0}</p><p className="text-sm font-black text-slate-400 uppercase tracking-widest truncate max-w-[150px]">{table.jugador2 || '---'}</p></div>
                   </div>
-                  <div className="flex items-center justify-center gap-3 bg-white/5 py-2 rounded-xl mt-auto"><Clock className="text-billar-neon" size={16} /><p className="text-2xl font-black font-mono tracking-tighter text-white/90">00:00:00</p></div>
+                  <div className="flex items-center justify-center gap-4 bg-white/5 py-4 rounded-3xl mt-auto"><Clock className="text-billar-neon" size={24} /><p className="text-4xl font-black font-mono tracking-tighter text-white/90"><Timer start={table.inicio} /></p></div>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center border border-dashed border-white/5 rounded-xl"><p className="text-sm font-black text-slate-700 tracking-[0.2em]">LISTA PARA JUGAR</p></div>
+                <div className="flex-1 flex items-center justify-center border-2 border-dashed border-white/5 rounded-3xl"><p className="text-xl font-black text-slate-800 tracking-[0.3em]">LISTA</p></div>
               )}
             </div>
           ))}
