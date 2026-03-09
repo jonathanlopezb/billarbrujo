@@ -632,26 +632,43 @@ export default function App() {
     } catch (e) { console.error(e); }
   };
 
-  // Poll queue
+  // Poll queue - Decreased to 2 seconds for faster response
   useEffect(() => {
     fetchQueue();
-    const id = setInterval(fetchQueue, 5000);
+    const id = setInterval(fetchQueue, 2000); 
     return () => clearInterval(id);
   }, []);
 
   const handleSongEnd = async (id) => {
+    // Optimistic Update: Remove the finished song immediately from local state
+    // so the next one starts playing without waiting for the database response.
+    setQueue(prev => prev.filter(song => song.id !== id));
+
     try {
       await fetch('/api/queue', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, action: 'played' })
       });
-      fetchQueue();
-    } catch (e) { console.error('Error al terminar canción:', e); }
+      // Optionally re-fetch to ensure sync, but the interval will do it anyway
+    } catch (e) { 
+      console.error('Error al terminar canción:', e);
+      fetchQueue(); // Sync back if there's an error
+    }
   };
 
   if (isTVMode) {
-    return <TVView tables={tables} queue={queue} onSongEnd={handleSongEnd} />;
+    return (
+      <div onClick={() => console.log('Interacción detectada')}>
+        <TVView tables={tables} queue={queue} onSongEnd={handleSongEnd} />
+        {/* Helper overlay for first-time interaction */}
+        {queue.length > 0 && (
+          <div className="fixed bottom-4 left-4 text-[10px] text-slate-700 bg-black/50 p-2 rounded backdrop-blur z-[200]">
+            PULSA CUALQUIER LUGAR PARA ACTIVAR SONIDO
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (view === 'login') return <LoginView onLogin={handleLogin} onGoToRegister={() => setView('register')} />;
