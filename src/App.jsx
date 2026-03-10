@@ -99,9 +99,12 @@ const TableCard = ({ table, onStartMatch, onFinishMatch, onAddConsumo }) => {
                 <div className="text-center"><p className="text-2xl font-black">{table.score2 || 0}</p></div>
               </div>
             </div>
-            <div className="flex items-center justify-between text-slate-400">
-               <div className="flex items-center gap-2"><Clock size={14} className="text-billar-neon" /><Timer start={table.inicio} /></div>
-               <p className="text-[10px] font-black text-billar-purple italic">POR PARTIDAS</p>
+            <div className="bg-white/5 rounded-lg p-3 text-center">
+              <p className="text-[10px] text-slate-500 uppercase font-black">{table.jugador1} VS {table.jugador2}</p>
+              <div className="flex justify-center gap-4 mt-2">
+                <div className="text-center"><p className="text-2xl font-black">{table.score1 || 0}</p></div>
+                <div className="text-center"><p className="text-2xl font-black">{table.score2 || 0}</p></div>
+              </div>
             </div>
           </div>
         ) : (
@@ -367,9 +370,41 @@ const HistoryView = () => (
   <div className="p-8"><h2 className="text-3xl font-black mb-6 uppercase italic">Historial</h2><div className="glass-card p-10 mt-6 text-center text-slate-700 font-black uppercase tracking-widest">Contabilidad próximamente.</div></div>
 );
 
-const CreditsView = () => (
-  <div className="p-8 text-center py-20"><CreditCard size={64} className="mx-auto text-amber-500/20 mb-4" /><h2 className="text-2xl font-black uppercase italic tracking-tighter">Créditos / Fiados</h2><p className="text-slate-500 text-sm">Módulo en desarrollo.</p></div>
-);
+const CreditsView = () => {
+  const [debtors, setDebtors] = useState([
+    { name: 'Ricardo P.', debt: 45000, lastOrder: 'hace 2 días' },
+    { name: 'Don Jose', debt: 12000, lastOrder: 'hace 1 hora' },
+    { name: 'Andrés M.', debt: 28500, lastOrder: 'ayer' }
+  ]);
+  return (
+    <div className="p-8 max-w-5xl mx-auto">
+      <div className="flex justify-between items-end mb-12">
+        <div>
+          <h2 className="text-3xl font-black uppercase italic tracking-tighter">Lista de <span className="text-amber-500">Deudores</span></h2>
+          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Cuentas pendientes por pagar (Fiados).</p>
+        </div>
+        <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl">
+          <p className="text-[10px] font-black text-amber-500 uppercase mb-1">Total por cobrar</p>
+          <p className="text-2xl font-black text-amber-400">$85.500</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {debtors.map((d, i) => (
+          <div key={i} className="glass-card p-6 flex items-center justify-between bg-white/[0.03] border-none">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center text-amber-500 font-black text-xl">{d.name[0]}</div>
+              <div><p className="font-bold">{d.name}</p><p className="text-[10px] text-slate-500 font-black uppercase">Último: {d.lastOrder}</p></div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl font-black text-white">${d.debt.toLocaleString()}</p>
+              <button className="text-[10px] font-black text-amber-500 uppercase hover:underline">Saldar Cuenta</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const LoginView = ({ onLogin, onGoToRegister }) => {
   const [form, setForm] = useState({ username: '', password: '' });
@@ -426,9 +461,11 @@ const StartMatchModal = ({ isOpen, tableId, onClose, onConfirm }) => {
   );
 };
 
-const SaleModal = ({ isOpen, table, products, onClose, onConfirm }) => {
+const SaleModal = ({ isOpen, products, onClose, onConfirm }) => {
   const [cart, setCart] = useState([]);
   const [clienteNombre, setClienteNombre] = useState('');
+  const [metodoPago, setMetodoPago] = useState('efectivo'); // 'efectivo' o 'fiado'
+
   const addToCart = (p) => {
     const existing = cart.find(item => item.id === p.id);
     if (existing) setCart(cart.map(item => item.id === p.id ? { ...item, q: item.q + 1 } : item));
@@ -442,7 +479,67 @@ const SaleModal = ({ isOpen, table, products, onClose, onConfirm }) => {
   if (!isOpen) return null;
   const total = cart.reduce((acc, i) => acc + (i.precio * i.q), 0);
   return (
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6"><div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} /><motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card w-full max-w-4xl h-[80vh] flex flex-col relative z-[2001] overflow-hidden bg-billar-dark shadow-2xl border-white/5"><div className="p-6 border-b border-white/5 flex justify-between items-center"><h2 className="text-2xl font-black italic uppercase tracking-tighter">Nueva <span className="text-billar-neon">Venta / Consumo</span></h2><button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-all"><X /></button></div><div className="flex-1 flex overflow-hidden"><div className="flex-1 p-6 overflow-y-auto border-r border-white/5 bg-black/20">{!table && <div className="mb-4"><label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Nombre del Cliente</label><input type="text" className="w-full neon-input py-2" value={clienteNombre} onChange={e => setClienteNombre(e.target.value)} placeholder="Ej: Jonathan Lopez" /></div>}<div className="grid grid-cols-2 gap-3">{products.map(p => (<button key={p.id} onClick={() => addToCart(p)} className="glass-card p-4 text-left hover:bg-white/5 active:scale-95 transition-all group"><p className="font-bold text-sm group-hover:text-billar-neon transition-all">{p.nombre}</p><p className="text-xs font-black text-slate-500">${p.precio}</p></button>))}</div></div><div className="w-80 p-6 flex flex-col bg-white/[0.02]"><h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Resumen de Cuenta</h3><div className="flex-1 space-y-3 overflow-y-auto pr-2">{cart.map(item => (<div key={item.id} className="flex justify-between items-center"><div className="min-w-0 flex-1"><p className="font-bold text-xs truncate">{item.nombre}</p><p className="text-[10px] font-black text-slate-500">{item.q} x ${item.precio}</p></div><div className="flex items-center gap-2"><button onClick={() => removeFromCart(item.id)} className="w-6 h-6 rounded bg-white/5 flex items-center justify-center hover:bg-red-500/20 text-red-500"><Minus size={12} /></button><button onClick={() => addToCart(item)} className="w-6 h-6 rounded bg-white/5 flex items-center justify-center hover:bg-emerald-500/20 text-emerald-500"><Plus size={12} /></button></div></div>))}{cart.length === 0 && <div className="h-40 flex items-center justify-center text-slate-700 text-[10px] font-black uppercase text-center">El carrito está vacío</div>}</div><div className="mt-6 pt-6 border-t border-white/5"><div className="flex justify-between items-end mb-6"><p className="text-slate-500 text-xs font-black uppercase">TOTAL</p><p className="text-3xl font-black text-emerald-400">${total}</p></div><button disabled={cart.length === 0} onClick={() => onConfirm(table, cart, clienteNombre)} className="w-full neon-button py-4 font-black italic uppercase disabled:opacity-20 transition-all">Generar Pedido</button></div></div></div></motion.div></div>
+    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6">
+      <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card w-full max-w-4xl h-[85vh] flex flex-col relative z-[2001] overflow-hidden bg-billar-dark shadow-2xl border-white/5">
+        <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+          <h2 className="text-2xl font-black italic uppercase tracking-tighter">Panel de <span className="text-emerald-400">Ventas Directas</span></h2>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-all text-slate-500 hover:text-white"><X /></button>
+        </div>
+        <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 p-6 overflow-y-auto bg-black/20">
+            <div className="mb-6">
+              <label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Nombre para la Cuenta</label>
+              <input type="text" className="w-full neon-input py-3 px-4" value={clienteNombre} onChange={e => setClienteNombre(e.target.value)} placeholder="Ej: Mesa 4 o Nombre de cliente" />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {products.map(p => (
+                <button key={p.id} onClick={() => addToCart(p)} className="glass-card p-4 text-left hover:bg-white/5 active:scale-95 transition-all group border-none bg-white/5">
+                  <p className="font-bold text-sm group-hover:text-emerald-400 transition-all truncate">{p.nombre}</p>
+                  <p className="text-xs font-black text-slate-500">${p.precio}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="w-96 p-8 flex flex-col bg-white/[0.03] border-l border-white/5">
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-6">Detalle del Pedido</h3>
+            <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+              {cart.map(item => (
+                <div key={item.id} className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-xs truncate">{item.nombre}</p>
+                    <p className="text-[10px] font-black text-slate-500">{item.q} x ${item.precio}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => removeFromCart(item.id)} className="w-8 h-8 rounded-lg bg-black/40 flex items-center justify-center hover:bg-red-500/20 text-red-500 transition-all"><Minus size={14} /></button>
+                    <button onClick={() => addToCart(item)} className="w-8 h-8 rounded-lg bg-black/40 flex items-center justify-center hover:bg-emerald-500/20 text-emerald-500 transition-all"><Plus size={14} /></button>
+                  </div>
+                </div>
+              ))}
+              {cart.length === 0 && <div className="h-full flex flex-col items-center justify-center text-slate-700 space-y-4 opacity-50"><ShoppingCart size={48} /><p className="text-[10px] font-black uppercase tracking-widest text-center">Selecciona productos<br/>para empezar</p></div>}
+            </div>
+            
+            <div className="mt-8 pt-8 border-t border-white/10">
+              <div className="mb-6">
+                <p className="text-[10px] font-black text-slate-500 uppercase mb-3">Método de Pago</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <button onClick={() => setMetodoPago('efectivo')} className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${metodoPago === 'efectivo' ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}><DollarSign size={14} /> Contado</button>
+                  <button onClick={() => setMetodoPago('fiado')} className={`py-3 rounded-xl text-[10px] font-black uppercase transition-all flex items-center justify-center gap-2 ${metodoPago === 'fiado' ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}><CreditCard size={14} /> Fiado</button>
+                </div>
+              </div>
+              <div className="flex justify-between items-end mb-6">
+                <p className="text-slate-500 text-xs font-black uppercase">TOTAL A PAGAR</p>
+                <p className="text-4xl font-black text-emerald-400 tracking-tighter">${total}</p>
+              </div>
+              <button disabled={cart.length === 0 || !clienteNombre} onClick={() => onConfirm(cart, clienteNombre, metodoPago)} className="w-full neon-button py-5 font-black italic uppercase disabled:opacity-20 transition-all text-lg tracking-tighter">Cerrar Cuenta</button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+</div></div></div></motion.div></div>
   );
 };
 
@@ -506,9 +603,18 @@ export default function App() {
     }
   };
 
-  const handleOrderConfirm = async (table, cart, clienteNombre) => {
+  const handleOrderConfirm = async (cart, clienteNombre, metodoPago) => {
     const items = cart.map(i => ({ productoId: i.id, cantidad: i.q, precioUnitario: i.precio }));
-    await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partidaId: table?.partida_id, clienteNombre: table ? null : clienteNombre, items, usuarioId: user?.id }) });
+    await fetch('/api/orders', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ 
+        clienteNombre, 
+        items, 
+        usuarioId: user?.id,
+        metodoPago 
+      }) 
+    });
     setSaleModalOpen(false); fetchData();
   };
 
@@ -534,7 +640,7 @@ export default function App() {
         <main className="flex-1 overflow-y-auto bg-white/[0.01]">
           <AnimatePresence mode="wait">
             <motion.div key={currentView} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {currentView === 'dashboard' && <DashboardView tables={tables} onStartMatch={id => { setSelectedTable(id); setMatchModalOpen(true); }} onFinishMatch={handleFinishMatch} onAddConsumo={t => { setSelectedTable(t); setSaleModalOpen(true); }} onNewSale={() => { setSelectedTable(null); setSaleModalOpen(true); }} />}
+              {currentView === 'dashboard' && <DashboardView tables={tables} onStartMatch={id => { setSelectedTable(id); setMatchModalOpen(true); }} onFinishMatch={handleFinishMatch} onAddConsumo={() => setSaleModalOpen(true)} onNewSale={() => setSaleModalOpen(true)} />}
               {currentView === 'tv-control' && <TVControllerView tables={tables} onUpdateScore={handleUpdateScore} />}
               {currentView === 'inventory' && <ProductsView products={products} onUpdate={fetchData} />}
               {currentView === 'music' && <MusicView queue={queue} user={user} onUpdateQueue={fetchData} />}
@@ -546,7 +652,7 @@ export default function App() {
       </div>
 
       <StartMatchModal isOpen={matchModalOpen} tableId={selectedTable} onClose={() => setMatchModalOpen(false)} onConfirm={handleStartMatch} />
-      <SaleModal isOpen={saleModalOpen} table={selectedTable && selectedTable.id ? selectedTable : null} products={products} onClose={() => setSaleModalOpen(false)} onConfirm={handleOrderConfirm} />
+      <SaleModal isOpen={saleModalOpen} products={products} onClose={() => setSaleModalOpen(false)} onConfirm={handleOrderConfirm} />
     </div>
   );
 }
