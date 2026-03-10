@@ -54,6 +54,7 @@ CREATE TABLE IF NOT EXISTS pedidos (
     usuario_id INTEGER REFERENCES usuarios(id), -- Quien tomó el pedido
     total NUMERIC DEFAULT 0,
     estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'entregado', 'pagado', 'cancelado')),
+    metodo_pago TEXT DEFAULT 'efectivo' CHECK (metodo_pago IN ('efectivo', 'fiado')),
     creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

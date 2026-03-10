@@ -2,14 +2,14 @@ import sql from '../src/lib/db.js';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { partidaId, clienteNombre, items, usuarioId } = req.body;
+    const { partidaId, clienteNombre, items, usuarioId, metodoPago } = req.body;
     try {
       // items logic: [{productoId, cantidad, precioUnitario}]
       const total = items.reduce((acc, item) => acc + (item.precioUnitario * item.cantidad), 0);
       
       const [pedido] = await sql`
-        INSERT INTO pedidos (partida_id, cliente_nombre, usuario_id, total, estado)
-        VALUES (${partidaId || null}, ${clienteNombre || null}, ${usuarioId || null}, ${total}, 'pagado')
+        INSERT INTO pedidos (partida_id, cliente_nombre, usuario_id, total, estado, metodo_pago)
+        VALUES (${partidaId || null}, ${clienteNombre || null}, ${usuarioId || null}, ${total}, 'pagado', ${metodoPago || 'efectivo'})
         RETURNING *
       `;
 
