@@ -539,9 +539,6 @@ const SaleModal = ({ isOpen, products, onClose, onConfirm }) => {
     </div>
   );
 };
-</div></div></div></motion.div></div>
-  );
-};
 
 // --- Main App ---
 
