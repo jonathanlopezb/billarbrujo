@@ -41,13 +41,13 @@ const Navbar = ({ user, onLogout }) => (
   </header>
 );
 
-const StatsGrid = ({ tables = [] }) => (
+const StatsGrid = ({ tables = [], stats = { total_dia: 0, creditos_generados: 0, pedidos_hoy: 0 } }) => (
   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
     {[
-      { label: 'Ingresos Hoy', value: '$0', icon: DollarSign, color: 'text-emerald-400' },
+      { label: 'Ingresos Hoy', value: `$${stats.total_dia || 0}`, icon: DollarSign, color: 'text-emerald-400' },
       { label: 'Mesas Ocupadas', value: `${tables.filter(t => t.estado === 'ocupada').length}/${tables.length}`, icon: TableIcon, color: 'text-billar-neon' },
-      { label: 'Fiados Hoy', value: '$0', icon: CreditCard, color: 'text-amber-400' },
-      { label: 'Pedidos Bar', value: '0', icon: Beer, color: 'text-purple-400' },
+      { label: 'Fiados Hoy', value: `$${stats.creditos_generados || 0}`, icon: CreditCard, color: 'text-amber-400' },
+      { label: 'Ventas Directas', value: stats.ventas_directas || '0', icon: ShoppingCart, color: 'text-purple-400' },
     ].map((stat, i) => (
       <div key={i} className="glass-card p-6 flex items-center justify-between">
         <div><p className="text-xs font-bold text-slate-500 uppercase tracking-tighter mb-1">{stat.label}</p><p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p></div>
@@ -131,7 +131,7 @@ const DashboardView = ({ tables, onStartMatch, onSettleMatch, onAddConsumo, onNe
       <div><h2 className="text-4xl font-black italic uppercase tracking-tighter">SALA DE <span className="text-billar-neon">BILLAR</span></h2><p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Gestión de mesas y partidas en tiempo real</p></div>
       <button onClick={onNewSale} className="neon-button flex items-center gap-2 italic uppercase font-black text-xs px-6"><ShoppingCart size={18} /> VENTA DIRECTA</button>
     </div>
-    <StatsGrid tables={tables} />
+    <StatsGrid tables={tables} stats={stats} />
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       {tables.map(t => (
         <TableCard key={t.id} table={t} onStartMatch={onStartMatch} onSettleMatch={onSettleMatch} onAddConsumo={onAddConsumo} onRegistrarChico={onRegistrarChico} />
@@ -300,20 +300,22 @@ const MusicView = ({ queue, user, onUpdateQueue }) => {
   );
 };
 
-const HistoryView = () => {
-  const [data, setData] = useState({ total_dia: 0, ventas_efectivo: 0, ventas_nequi: 0, creditos_generados: 0 });
-  useEffect(() => { fetch('/api/caja').then(r => r.json()).then(d => d && setData(d)); }, []);
+const HistoryView = ({ stats }) => {
+  const data = stats || { total_dia: 0, ventas_efectivo: 0, ventas_nequi: 0, creditos_generados: 0 };
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <h2 className="text-4xl font-black mb-12 uppercase italic tracking-tighter">Caja <span className="text-emerald-500">Diaria</span></h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-         <div className="glass-card p-8 border-emerald-500/10 bg-emerald-500/5 text-center"><p className="text-[10px] font-black text-emerald-500 uppercase mb-2">Efectivo</p><p className="text-4xl font-black italic tracking-tighter">${data.ventas_efectivo}</p></div>
-         <div className="glass-card p-8 border-blue-500/10 bg-blue-500/5 text-center"><p className="text-[10px] font-black text-blue-500 uppercase mb-2">Nequi/Paga</p><p className="text-4xl font-black italic tracking-tighter">${data.ventas_nequi}</p></div>
-         <div className="glass-card p-8 border-amber-500/10 bg-amber-500/5 text-center"><p className="text-[10px] font-black text-amber-500 uppercase mb-2">Fiados Hoy</p><p className="text-4xl font-black italic tracking-tighter">${data.creditos_generados}</p></div>
+         <div className="glass-card p-8 border-emerald-500/10 bg-emerald-500/5 text-center transition-all hover:bg-emerald-500/10"><p className="text-[10px] font-black text-emerald-500 uppercase mb-2">Ventas Efectivo</p><p className="text-4xl font-black italic tracking-tighter text-emerald-400">${data.ventas_efectivo || 0}</p></div>
+         <div className="glass-card p-8 border-blue-500/10 bg-blue-500/5 text-center transition-all hover:bg-blue-500/10"><p className="text-[10px] font-black text-blue-500 uppercase mb-2">Ventas Nequi/Paga</p><p className="text-4xl font-black italic tracking-tighter text-blue-400">${data.ventas_nequi || 0}</p></div>
+         <div className="glass-card p-8 border-amber-500/10 bg-amber-500/5 text-center transition-all hover:bg-amber-500/10"><p className="text-[10px] font-black text-amber-500 uppercase mb-2">Créditos (Fiados)</p><p className="text-4xl font-black italic tracking-tighter text-amber-400">${data.creditos_generados || 0}</p></div>
       </div>
-      <div className="glass-card p-16 text-center border-emerald-500/20 bg-emerald-500/10">
-         <p className="text-xs font-black text-slate-500 uppercase mb-4 tracking-[0.3em]">Total en Caja Hoy</p>
-         <p className="text-8xl font-black italic text-emerald-400 tracking-tighter">${data.total_dia}</p>
+      <div className="glass-card p-16 text-center border-emerald-500/20 bg-emerald-500/10 shadow-neon-glow">
+         <p className="text-xs font-black text-slate-500 uppercase mb-4 tracking-[0.3em]">Total Recaudado Hoy (Sin créditos)</p>
+         <p className="text-8xl font-black italic text-emerald-400 tracking-tighter transition-all hover:scale-105">${data.total_dia || 0}</p>
+         <div className="mt-8 flex justify-center gap-4">
+            <div className="px-4 py-2 bg-white/5 rounded-full border border-white/5 text-[10px] font-black uppercase text-slate-400">Actualización en tiempo real</div>
+         </div>
       </div>
     </div>
   );
@@ -708,6 +710,7 @@ export default function App() {
   const [products, setProducts] = useState([]);
   const [personas, setPersonas] = useState([]);
   const [creditos, setCreditos] = useState([]);
+  const [stats, setStats] = useState({ total_dia: 0, ventas_efectivo: 0, ventas_nequi: 0, creditos_generados: 0 });
   const [queue, setQueue] = useState([]);
   const [matchModalOpen, setMatchModalOpen] = useState(false);
   const [saleModalOpen, setSaleModalOpen] = useState(false);
@@ -717,17 +720,19 @@ export default function App() {
 
   const fetchData = async () => {
     try {
-      const [pRes, prodRes, qRes, persRes, credRes] = await Promise.all([
+      const [pRes, prodRes, qRes, persRes, credRes, statsRes] = await Promise.all([
         fetch('/api/partidas'), 
         fetch('/api/negocio?type=products'), 
         fetch('/api/musica'), 
         fetch('/api/negocio?type=personas'), 
-        fetch('/api/caja?type=creditos')
+        fetch('/api/caja?type=creditos'),
+        fetch('/api/caja')
       ]);
       if (pRes.ok) setTables(await pRes.ok ? await pRes.json() : []);
       if (prodRes.ok) setProducts(await prodRes.json());
       if (persRes.ok) setPersonas(await persRes.json());
       if (credRes.ok) setCreditos(await credRes.json());
+      if (statsRes.ok) setStats(await statsRes.json());
       if (qRes.ok) {
         const qData = await qRes.json();
         if (Array.isArray(qData)) setQueue(qData.map(q => ({ id: q.id, title: q.titulo, requestedBy: q.solicitado_por, videoId: q.video_id })));
@@ -792,16 +797,18 @@ export default function App() {
           </div>
         </aside>
         <main className="flex-1 overflow-y-auto bg-white/[0.01] custom-scrollbar">
-          <AnimatePresence mode="wait"><motion.div key={currentView} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              {currentView === 'dashboard' && <DashboardView tables={tables} onStartMatch={id => { setSelectedTable(id); setMatchModalOpen(true); }} onSettleMatch={t => { setSelectedTable(t); setSettlementModalOpen(true); }} onAddConsumo={t => { setSelectedTable(t); setSaleModalOpen(true); }} onNewSale={() => { setSelectedTable(null); setSaleModalOpen(true); }} onRegistrarChico={handleRegistrarChico} />}
+          <AnimatePresence mode="wait">
+            <motion.div key={currentView} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {currentView === 'dashboard' && <DashboardView tables={tables} stats={stats} onStartMatch={id => { setSelectedTable(id); setMatchModalOpen(true); }} onSettleMatch={t => { setSelectedTable(t); setSettlementModalOpen(true); }} onAddConsumo={t => { setSelectedTable(t); setSaleModalOpen(true); }} onNewSale={() => { setSelectedTable(null); setSaleModalOpen(true); }} onRegistrarChico={handleRegistrarChico} />}
               {currentView === 'tv-control' && <TVControllerView tables={tables} onUpdateScore={handleUpdateScore} />}
               {currentView === 'inventory' && <ProductsView products={products} onUpdate={fetchData} />}
               {currentView === 'music' && <MusicView queue={queue} user={user} onUpdateQueue={fetchData} />}
-              {currentView === 'history' && <HistoryView />}
+              {currentView === 'history' && <HistoryView stats={stats} />}
               {currentView === 'credits' && <CreditsView creditos={creditos} onUpdate={fetchData} />}
               {currentView === 'personas' && <PersonasView personas={personas} onUpdate={fetchData} />}
               {currentView === 'users' && <UsersView user={user} />}
-          </motion.div></AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
       <StartMatchModal isOpen={matchModalOpen} tableId={selectedTable} onClose={() => setMatchModalOpen(false)} onConfirm={handleStartMatch} />
