@@ -58,11 +58,18 @@ export default async function handler(req, res) {
 
     // ADD CONSUMO
     if (type === 'consumo') {
-      const { id_partida, tipo_consumo, id_persona, id_pareja, id_producto, cantidad, precio_unitario } = req.body;
+      const { id_partida, tipo_consumo, id_persona, id_pareja, id_producto, cantidad, precio_unitario, metodo_pago } = req.body;
       try {
         const total = cantidad * precio_unitario;
         const [c] = await sql`INSERT INTO consumos (id_partida, tipo_consumo, id_persona, id_pareja, id_producto, cantidad, precio_unitario, total) VALUES (${id_partida || null}, ${tipo_consumo}, ${id_persona || null}, ${id_pareja || null}, ${id_producto}, ${cantidad}, ${precio_unitario}, ${total}) RETURNING *`;
         await sql`UPDATE productos SET stock = stock - ${cantidad} WHERE id = ${id_producto}`;
+        
+        // Registrar en caja si es venta directa pagada enseguida
+        if (tipo_consumo === 'directo' && metodo_pago && metodo_pago !== 'cuenta') {
+          const col = metodo_pago === 'efectivo' ? 'ventas_efectivo' : (metodo_pago === 'nequi' ? 'ventas_nequi' : 'ventas_transferencia');
+          await sql`INSERT INTO caja_diaria (fecha, ${sql(col)}, total_dia) VALUES (CURRENT_DATE, ${total}, ${total}) ON CONFLICT (fecha) DO UPDATE SET ${sql(col)} = caja_diaria.${sql(col)} + ${total}, total_dia = caja_diaria.total_dia + ${total}`;
+        }
+
         return res.status(201).json(c);
       } catch (e) { return res.status(500).json({ error: e.message }); }
     }

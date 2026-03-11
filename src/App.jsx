@@ -440,27 +440,178 @@ const SettlementModal = ({ isOpen, table, onClose, onConfirm, personas }) => {
 
 const SaleModal = ({ isOpen, products, onClose, onConfirm, selectedTable, personas }) => {
   const [cart, setCart] = useState([]);
-  const [target, setTarget] = useState({ tipo: 'pareja', id_pareja: null, id_persona: null });
-  useEffect(() => { if (selectedTable) setTarget({ tipo: 'pareja', id_pareja: selectedTable.parejas?.[0]?.id, id_persona: null }); else setTarget({ tipo: 'persona', id_pareja: null, id_persona: null }); }, [selectedTable]);
-  const addToCart = (p) => { const existing = cart.find(item => item.id === p.id); if (existing) setCart(cart.map(item => item.id === p.id ? { ...item, q: item.q + 1 } : item)); else setCart([...cart, { ...p, q: 1, precio: parseFloat(p.precio) }]); };
-  const removeFromCart = (id) => { const existing = cart.find(item => item.id === id); if (existing.q > 1) setCart(cart.map(item => item.id === id ? { ...item, q: item.q - 1 } : item)); else setCart(cart.filter(item => item.id !== id)); };
+  const [target, setTarget] = useState({ tipo: 'directo', id_pareja: null, id_persona: null, metodo_pago: 'efectivo' });
+  
+  useEffect(() => { 
+    if (selectedTable) {
+      setTarget({ tipo: 'pareja', id_pareja: selectedTable.parejas?.[0]?.id, id_persona: null, metodo_pago: 'cuenta' }); 
+    } else {
+      setTarget({ tipo: 'directo', id_pareja: null, id_persona: null, metodo_pago: 'efectivo' });
+    }
+    setCart([]);
+  }, [selectedTable, isOpen]);
+
+  const addToCart = (p) => { 
+    const existing = cart.find(item => item.id === p.id); 
+    if (existing) setCart(cart.map(item => item.id === p.id ? { ...item, q: item.q + 1 } : item)); 
+    else setCart([...cart, { ...p, q: 1, precio: parseFloat(p.precio) }]); 
+  };
+  
+  const removeFromCart = (id) => { 
+    const existing = cart.find(item => item.id === id); 
+    if (existing.q > 1) setCart(cart.map(item => item.id === id ? { ...item, q: item.q - 1 } : item)); 
+    else setCart(cart.filter(item => item.id !== id)); 
+  };
+
   if (!isOpen) return null;
   const total = cart.reduce((acc, i) => acc + (i.precio * i.q), 0);
+
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-xl">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card w-full max-w-5xl h-[85vh] flex relative bg-billar-dark overflow-hidden border-white/5">
-        <div className="flex-1 flex flex-col overflow-hidden"><div className="p-6 border-b border-white/5 flex justify-between items-center"><h2 className="text-2xl font-black italic uppercase tracking-tighter">Bar & <span className="text-emerald-500">Restaurante</span></h2>{selectedTable?.nombre || 'Venta Express'}<button onClick={onClose}><X /></button></div><div className="flex-1 p-6 overflow-y-auto bg-black/20 custom-scrollbar"><div className="grid grid-cols-2 md:grid-cols-4 gap-4">{products.map(p => (<button key={p.id} onClick={() => addToCart(p)} className="glass-card p-6 text-center bg-white/[0.02] border-none hover:bg-white/5 transition-all"><p className="font-black text-xs uppercase mb-1">{p.nombre}</p><p className="text-[10px] font-black text-slate-600">${p.precio}</p></button>))}</div></div></div>
-        <div className="w-96 flex flex-col bg-white/[0.03] border-l border-white/5 p-8">
-           <div className="space-y-4 mb-8">
-              <p className="text-[10px] font-black text-slate-500 uppercase">¿Quién consume?</p>
-              <div className="grid grid-cols-2 gap-2"><button onClick={() => setTarget({...target, tipo: 'pareja'})} className={`py-2 rounded-xl text-[10px] font-black uppercase ${target.tipo === 'pareja' ? 'bg-billar-neon text-black' : 'bg-white/5'}`}>Pareja</button><button onClick={() => setTarget({...target, tipo: 'persona'})} className={`py-2 rounded-xl text-[10px] font-black uppercase ${target.tipo === 'persona' ? 'bg-billar-neon text-black' : 'bg-white/5'}`}>Persona</button></div>
-              {target.tipo === 'pareja' && selectedTable && <select className="neon-input w-full py-2 text-xs" value={target.id_pareja || ''} onChange={e => setTarget({...target, id_pareja: e.target.value})}>{selectedTable.parejas?.map(p => <option key={p.id} value={p.id}>Pareja {p.nombre}</option>)}</select>}
-              <select className="neon-input w-full py-2 text-xs" value={target.id_persona || ''} onChange={e => setTarget({...target, id_persona: e.target.value})}><option value="">Seleccionar Jugador...</option>{personas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}</select>
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card w-full max-w-6xl h-[90vh] flex relative bg-billar-dark overflow-hidden border-white/5">
+        
+        {/* Left: Product Grid */}
+        <div className="flex-1 flex flex-col overflow-hidden border-r border-white/5">
+          <div className="p-6 border-b border-white/5 flex justify-between items-center bg-white/5">
+            <div className="flex items-center gap-4">
+               <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center text-emerald-400"><ShoppingCart size={20} /></div>
+               <div>
+                  <h2 className="text-xl font-black italic uppercase tracking-tighter leading-none">Punto de <span className="text-emerald-500">Venta</span></h2>
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{selectedTable ? `Cargar a: ${selectedTable.nombre}` : 'Venta Rápida (Caja Directa)'}</p>
+               </div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-all"><X /></button>
+          </div>
+          
+          <div className="flex-1 p-6 overflow-y-auto bg-black/20 custom-scrollbar">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {products.map(p => (
+                <button key={p.id} onClick={() => addToCart(p)} className="glass-card p-6 text-center bg-white/[0.02] border-none hover:bg-white/5 transition-all group relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-all"><Plus size={16} className="text-emerald-500" /></div>
+                  <p className="font-black text-xs uppercase mb-1 line-clamp-1">{p.nombre}</p>
+                  <p className="text-[10px] font-black text-emerald-500">${p.precio}</p>
+                  <p className="text-[8px] font-black text-slate-600 uppercase mt-2">Stock: {p.stock}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Cart & Details */}
+        <div className="w-[450px] flex flex-col bg-white/[0.03] p-8">
+           <div className="space-y-6 mb-8">
+              <div>
+                 <p className="text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest">Tipo de Registro</p>
+                 <div className="grid grid-cols-3 gap-2">
+                    {selectedTable && (
+                      <>
+                        <button onClick={() => setTarget({...target, tipo: 'pareja'})} className={`py-3 rounded-xl text-[9px] font-black uppercase transition-all ${target.tipo === 'pareja' ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-slate-400'}`}>Mesa (Pareja)</button>
+                        <button onClick={() => setTarget({...target, tipo: 'persona'})} className={`py-3 rounded-xl text-[9px] font-black uppercase transition-all ${target.tipo === 'persona' ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20' : 'bg-white/5 text-slate-400'}`}>Mesa (Individual)</button>
+                      </>
+                    )}
+                    <button onClick={() => setTarget({...target, tipo: 'directo'})} className={`py-3 rounded-xl text-[9px] font-black uppercase transition-all ${target.tipo === 'directo' ? 'bg-billar-neon text-black shadow-lg shadow-billar-neon/20' : 'bg-white/5 text-slate-400'}`}>Venta Directa</button>
+                 </div>
+              </div>
+
+              {target.tipo === 'pareja' && selectedTable && (
+                <div className="space-y-2">
+                   <p className="text-[10px] font-black text-slate-500 uppercase">Seleccionar Pareja</p>
+                   <select className="neon-input w-full py-3 text-xs" value={target.id_pareja || ''} onChange={e => setTarget({...target, id_pareja: e.target.value})}>
+                      {selectedTable.parejas?.map(p => <option key={p.id} value={p.id}>Pareja {p.nombre}</option>)}
+                   </select>
+                </div>
+              )}
+
+              {target.tipo === 'persona' && (
+                <div className="space-y-2">
+                   <p className="text-[10px] font-black text-slate-500 uppercase">Seleccionar Jugador</p>
+                   <select className="neon-input w-full py-3 text-xs" value={target.id_persona || ''} onChange={e => setTarget({...target, id_persona: e.target.value})}>
+                      <option value="">Buscar en lista...</option>
+                      {personas.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                   </select>
+                </div>
+              )}
+
+              {target.tipo === 'directo' && (
+                <div className="space-y-2">
+                   <p className="text-[10px] font-black text-slate-500 uppercase">Método de Pago</p>
+                   <div className="grid grid-cols-2 gap-2">
+                      <button onClick={() => setTarget({...target, metodo_pago: 'efectivo'})} className={`py-2 rounded-lg text-[9px] font-black uppercase ${target.metodo_pago === 'efectivo' ? 'bg-white/20 text-white' : 'bg-white/5 text-slate-500'}`}>Efectivo</button>
+                      <button onClick={() => setTarget({...target, metodo_pago: 'nequi'})} className={`py-2 rounded-lg text-[9px] font-black uppercase ${target.metodo_pago === 'nequi' ? 'bg-white/20 text-white' : 'bg-white/5 text-slate-500'}`}>Nequi / Paga</button>
+                   </div>
+                </div>
+              )}
            </div>
-           <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar border-t border-white/5 pt-6">{cart.map(item => (<div key={item.id} className="flex justify-between items-center bg-white/5 p-4 rounded-xl"><div><p className="font-black text-[10px] uppercase">{item.nombre}</p><p className="text-[9px] font-black text-slate-500">{item.q} X ${item.precio}</p></div><div className="flex gap-2"><button onClick={() => removeFromCart(item.id)} className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-red-500 transition-all">-</button><button onClick={() => addToCart(item)} className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-emerald-500 transition-all">+</button></div></div>))}</div>
-           <div className="mt-8 pt-6 border-t border-white/10"><div className="flex justify-between items-end mb-6"><p className="text-slate-500 text-[10px] font-black uppercase">Subtotal</p><p className="text-4xl font-black text-billar-neon italic tracking-tighter">${total}</p></div><button disabled={cart.length === 0} onClick={() => onConfirm(cart, target)} className="w-full neon-button py-5 text-xl font-black italic uppercase shadow-neon-glow">CONFIRMAR PEDIDO</button></div>
+
+           <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar border-t border-white/5 pt-6">
+              {cart.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-slate-700 opacity-30">
+                   <Plus size={40} className="mb-2" />
+                   <p className="text-[10px] font-black uppercase tracking-widest">Carrito Vacío</p>
+                </div>
+              ) : cart.map(item => (
+                <div key={item.id} className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5">
+                   <div className="min-w-0">
+                      <p className="font-black text-[10px] uppercase truncate">{item.nombre}</p>
+                      <p className="text-[9px] font-black text-slate-500">{item.q} X ${item.precio}</p>
+                   </div>
+                   <div className="flex gap-2">
+                      <button onClick={() => removeFromCart(item.id)} className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-red-500 hover:bg-red-500/10 transition-all">-</button>
+                      <button onClick={() => addToCart(item)} className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-emerald-500 hover:bg-emerald-500/10 transition-all">+</button>
+                   </div>
+                </div>
+              ))}
+           </div>
+
+           <div className="mt-8 pt-6 border-t border-white/10">
+              <div className="flex justify-between items-end mb-6">
+                 <div>
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Total Pedido</p>
+                    <p className="text-4xl font-black text-billar-neon italic tracking-tighter">${total}</p>
+                 </div>
+                 {cart.length > 0 && <button onClick={() => setCart([])} className="text-[9px] font-black text-red-500 uppercase hover:underline mb-2">Limpiar</button>}
+              </div>
+              <button 
+                disabled={cart.length === 0} 
+                onClick={() => onConfirm(cart, target)} 
+                className="w-full neon-button py-6 text-xl font-black italic uppercase shadow-neon-glow disabled:opacity-30 disabled:shadow-none"
+              >
+                {target.tipo === 'directo' ? 'REGISTRAR VENTA PAGADA' : 'CARGAR A LA CUENTA'}
+              </button>
+           </div>
         </div>
       </motion.div>
+    </div>
+  );
+};
+
+
+const PersonasView = ({ personas, onUpdate }) => {
+  const [form, setForm] = useState({ nombre: '', telefono: '' });
+  const handleAdd = async (e) => {
+    e.preventDefault();
+    await fetch('/api/negocio?type=personas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    setForm({ nombre: '', telefono: '' }); onUpdate();
+  };
+  const handleDelete = async (id) => { if (confirm('¿Borrar?')) { await fetch(`/api/negocio?type=personas&id=${id}`, { method: 'DELETE' }); onUpdate(); } };
+  return (
+    <div className="p-8 max-w-4xl mx-auto">
+      <h2 className="text-4xl font-black uppercase italic mb-8">Clientes y <span className="text-billar-neon">Jugadores</span></h2>
+      <div className="glass-card p-8 mb-8">
+        <form onSubmit={handleAdd} className="flex gap-4">
+          <input className="neon-input flex-1 px-4 py-3" placeholder="Nombre del Jugador" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required />
+          <input className="neon-input flex-1 px-4 py-3" placeholder="Teléfono (Opcional)" value={form.telefono} onChange={e => setForm({...form, telefono: e.target.value})} />
+          <button className="neon-button px-8 py-3 font-black uppercase italic shadow-neon-glow">AGREGAR JUGADOR</button>
+        </form>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {personas.map(p => (
+          <div key={p.id} className="glass-card p-6 flex justify-between items-center bg-white/[0.02] border-white/5">
+            <div><p className="font-black uppercase text-lg">{p.nombre}</p><p className="text-xs text-slate-500 font-bold uppercase tracking-widest">{p.telefono || 'Sin teléfono'}</p></div>
+            <button onClick={() => handleDelete(p.id)} className="p-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 size={18} /></button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -636,6 +787,7 @@ export default function App() {
             <SidebarItem icon={Music} label="Rockola" active={currentView === 'music'} onClick={() => setCurrentView('music')} />
             <SidebarItem icon={History} label="Caja Diaria" active={currentView === 'history'} onClick={() => setCurrentView('history')} />
             <SidebarItem icon={Users} label="Deudores" active={currentView === 'credits'} onClick={() => setCurrentView('credits')} />
+            <SidebarItem icon={User} label="Jugadores" active={currentView === 'personas'} onClick={() => setCurrentView('personas')} />
             {isOwner && <SidebarItem icon={Settings} label="Personal" active={currentView === 'users'} onClick={() => setCurrentView('users')} />}
           </div>
         </aside>
@@ -647,12 +799,27 @@ export default function App() {
               {currentView === 'music' && <MusicView queue={queue} user={user} onUpdateQueue={fetchData} />}
               {currentView === 'history' && <HistoryView />}
               {currentView === 'credits' && <CreditsView creditos={creditos} onUpdate={fetchData} />}
+              {currentView === 'personas' && <PersonasView personas={personas} onUpdate={fetchData} />}
               {currentView === 'users' && <UsersView user={user} />}
           </motion.div></AnimatePresence>
         </main>
       </div>
       <StartMatchModal isOpen={matchModalOpen} tableId={selectedTable} onClose={() => setMatchModalOpen(false)} onConfirm={handleStartMatch} />
-      <SaleModal isOpen={saleModalOpen} products={products} onClose={() => setSaleModalOpen(false)} onConfirm={(cart, target) => { cart.forEach(item => { handleAddConsumo({ id_partida: selectedTable?.partida_id, tipo_consumo: target.tipo, id_persona: target.id_persona, id_pareja: target.id_pareja, id_producto: item.id, cantidad: item.q, precio_unitario: item.precio }); }); setSaleModalOpen(false); }} selectedTable={selectedTable} personas={personas} />
+      <SaleModal isOpen={saleModalOpen} products={products} onClose={() => setSaleModalOpen(false)} onConfirm={(cart, target) => { 
+        cart.forEach(item => { 
+          handleAddConsumo({ 
+            id_partida: selectedTable?.partida_id, 
+            tipo_consumo: target.tipo, 
+            id_persona: target.id_persona, 
+            id_pareja: target.id_pareja, 
+            id_producto: item.id, 
+            cantidad: item.q, 
+            precio_unitario: item.precio,
+            metodo_pago: target.metodo_pago
+          }); 
+        }); 
+        setSaleModalOpen(false); 
+      }} selectedTable={selectedTable} personas={personas} />
       <SettlementModal isOpen={settlementModalOpen} table={selectedTable} onClose={() => setSettlementModalOpen(false)} onConfirm={handleOrderConfirm} personas={personas} />
     </div>
   );
