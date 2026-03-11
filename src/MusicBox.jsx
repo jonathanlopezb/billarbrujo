@@ -16,7 +16,7 @@ export default function MusicBox() {
   const handleSearch = async () => {
     if (!search.trim()) return;
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(search)}`);
+      const response = await fetch(`/api/musica?q=${encodeURIComponent(search)}`);
       const data = await response.json();
       if (Array.isArray(data)) {
         setResults(data);
@@ -29,7 +29,7 @@ export default function MusicBox() {
 
   const requestSong = async (song) => {
     try {
-      const res = await fetch('/api/queue', {
+      const res = await fetch('/api/musica', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

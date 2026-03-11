@@ -146,15 +146,15 @@ const ProductsView = ({ products, onUpdate }) => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    const method = editing ? 'PATCH' : 'POST';
+    const method = editing && editing !== 'new' ? 'PATCH' : 'POST';
     const body = editing === 'new' ? form : { ...form, id: editing };
-    await fetch('/api/products', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    await fetch('/api/negocio?type=products', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     setEditing(null); setForm({ nombre: '', precio: '', categoria: 'bebida', stock: '' });
     onUpdate();
   };
 
   const handleEdit = (p) => { setEditing(p.id); setForm({ nombre: p.nombre, precio: p.precio, categoria: p.categoria, stock: p.stock }); };
-  const handleDelete = async (id) => { if (window.confirm('¿Borrar?')) { await fetch(`/api/products?id=${id}`, { method: 'DELETE' }); onUpdate(); } };
+  const handleDelete = async (id) => { if (window.confirm('¿Borrar?')) { await fetch(`/api/negocio?type=products&id=${id}`, { method: 'DELETE' }); onUpdate(); } };
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -291,8 +291,8 @@ const TVView = ({ tables, queue, onSongEnd }) => {
 const MusicView = ({ queue, user, onUpdateQueue }) => {
   const isAdmin = user?.rol === 'dueño' || user?.rol === 'admin';
   const handleAction = async (id, action) => {
-    if (action === 'delete') await fetch(`/api/queue?id=${id}`, { method: 'DELETE' });
-    else await fetch('/api/queue', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action }) });
+    if (action === 'delete') await fetch(`/api/musica?id=${id}`, { method: 'DELETE' });
+    else await fetch('/api/musica', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action }) });
     onUpdateQueue();
   };
   return (
@@ -321,7 +321,7 @@ const HistoryView = () => {
 
 const CreditsView = ({ creditos, onUpdate }) => {
   const handlePay = async (id, val) => {
-    await fetch('/api/creditos', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_credito: id, valor_abono: val, metodo_pago: 'efectivo' }) });
+    await fetch('/api/caja?type=creditos', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_credito: id, valor_abono: val, metodo_pago: 'efectivo' }) });
     onUpdate();
   };
   return (
@@ -351,20 +351,20 @@ const UsersView = ({ user }) => {
   const [userList, setUserList] = useState([]);
   const [form, setForm] = useState({ username: '', password: '', rol: 'mesero', nombre: '' });
   const refresh = async () => {
-    const res = await fetch('/api/users', { headers: { 'Authorization': `Bearer ${localStorage.getItem('billar_token') || ''}` } });
+    const res = await fetch('/api/auth', { headers: { 'Authorization': `Bearer ${localStorage.getItem('billar_token') || ''}` } });
     if (res.ok) setUserList(await res.json());
   };
   useEffect(() => { refresh(); }, []);
   const handleCreate = async (e) => {
     e.preventDefault();
-    await fetch('/api/users', { 
+    await fetch('/api/auth', { 
       method: 'POST', 
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('billar_token') || ''}` },
       body: JSON.stringify(form)
     });
     setForm({ username: '', password: '', rol: 'mesero', nombre: '' }); refresh();
   };
-  const handleDelete = async (id) => { if (window.confirm('Delete?')) { await fetch(`/api/users?id=${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('billar_token') || ''}` } }); refresh(); } };
+  const handleDelete = async (id) => { if (window.confirm('Delete?')) { await fetch(`/api/auth?id=${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${localStorage.getItem('billar_token') || ''}` } }); refresh(); } };
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <h2 className="text-4xl font-black uppercase italic mb-10 tracking-tighter">Personal del <span className="text-billar-neon">Negocio</span></h2>
@@ -392,7 +392,7 @@ const SettlementModal = ({ isOpen, table, onClose, onConfirm, personas }) => {
   const [payouts, setPayouts] = useState([]);
   useEffect(() => {
     if (isOpen && table) {
-      fetch(`/api/cuentas?id_partida=${table.partida_id}`).then(res => res.json()).then(d => {
+      fetch(`/api/partidas?action=summary&id_partida=${table.partida_id}`).then(res => res.json()).then(d => {
            setData(d);
            const initial = [];
            d.parejas?.forEach(p => {
@@ -465,6 +465,88 @@ const SaleModal = ({ isOpen, products, onClose, onConfirm, selectedTable, person
   );
 };
 
+// --- Modals & Global Views ---
+
+const StartMatchModal = ({ isOpen, tableId, onClose, onConfirm }) => {
+  const [precioChico, setPrecioChico] = useState(1000);
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[4000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
+      <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 w-full max-w-md border-billar-neon/20">
+        <h2 className="text-3xl font-black italic uppercase italic tracking-tighter mb-8 text-center text-billar-neon underline decoration-4 underline-offset-8">Abrir Mesa</h2>
+        <div className="space-y-6">
+          <div><label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Precio por Chico ($)</label><input type="number" className="w-full neon-input py-4 text-center text-2xl" value={precioChico} onChange={e => setPrecioChico(e.target.value)} /></div>
+          <button onClick={() => onConfirm(tableId, { precioChico })} className="w-full neon-button py-5 text-xl font-black italic uppercase tracking-tighter shadow-neon-glow">EMPEZAR PARTIDA</button>
+          <button onClick={onClose} className="w-full py-2 text-xs font-black text-slate-500 uppercase hover:text-white transition-all">Cancelar</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+const LoginView = ({ onLogin, onGoToRegister }) => {
+  const [form, setForm] = useState({ username: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault(); setLoading(true); setError('');
+    try {
+      const res = await fetch('/api/auth?action=login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form }) });
+      const data = await res.json();
+      if (res.ok) onLogin(data); else setError(data.error || 'Error de acceso');
+    } catch (e) { setError('Error de conexión'); } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="h-screen w-screen flex items-center justify-center bg-billar-dark p-6 relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-billar-neon/5 blur-[120px] rounded-full" />
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-12 w-full max-w-md relative z-10 border-white/5 bg-white/[0.02]">
+        <div className="flex flex-col items-center mb-10 text-center">
+          <div className="w-20 h-20 bg-billar-neon rounded-2xl flex items-center justify-center shadow-neon-glow mb-6 text-5xl">🎱</div>
+          <h1 className="text-4xl font-black tracking-tighter uppercase italic">BILLAR <span className="text-billar-neon">BRUJO</span></h1>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-2">Point of Sale Professional</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div><label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Usuario</label><div className="relative"><User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} /><input className="w-full neon-input py-3 pl-12" value={form.username} onChange={e => setForm({...form, username: e.target.value})} required /></div></div>
+          <div><label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Contraseña</label><div className="relative"><Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} /><input type="password" className="w-full neon-input py-3 pl-12" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required /></div></div>
+          {error && <p className="text-red-500 text-[10px] font-black uppercase text-center">{error}</p>}
+          <button disabled={loading} className="w-full neon-button py-5 text-xl font-black italic uppercase tracking-tighter shadow-neon-glow">{loading ? 'Entrando...' : 'Iniciar Sesión'}</button>
+        </form>
+        <button onClick={onGoToRegister} className="w-full mt-8 text-[9px] font-black text-slate-600 uppercase hover:text-billar-neon transition-all">¿Eres el dueño? Regístrate aquí</button>
+      </motion.div>
+    </div>
+  );
+};
+
+const RegisterOwnerView = ({ onBack }) => {
+  const [form, setForm] = useState({ username: '', password: '', nombre: '', secretKey: '' });
+  const [error, setError] = useState('');
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/auth?action=register-owner', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form }) });
+      if (res.ok) { alert('Exito! Ahora inicia sesión'); onBack(); } else { const d = await res.json(); setError(d.error); }
+    } catch (e) { setError('Error de registro'); }
+  };
+  return (
+    <div className="h-screen w-screen flex items-center justify-center bg-billar-dark p-6">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 w-full max-w-md border-emerald-500/20 bg-emerald-500/[0.02]">
+        <h2 className="text-3xl font-black uppercase italic text-center mb-8">Registro de <span className="text-emerald-400">Dueño</span></h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input className="w-full neon-input py-3 px-4" placeholder="Nombre Completo" value={form.nombre} onChange={e => setForm({...form, nombre: e.target.value})} required />
+          <input className="w-full neon-input py-3 px-4" placeholder="Username" value={form.username} onChange={e => setForm({...form, username: e.target.value})} required />
+          <input type="password" className="w-full neon-input py-3 px-4" placeholder="Contraseña" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required />
+          <input type="password" className="w-full neon-input py-3 px-4" placeholder="Llave de Seguridad" value={form.secretKey} onChange={e => setForm({...form, secretKey: e.target.value})} required />
+          {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+          <button className="w-full bg-emerald-500 text-black font-black py-4 rounded-xl uppercase tracking-widest italic shadow-lg shadow-emerald-500/20">Registrar Dueño</button>
+          <button type="button" onClick={onBack} className="w-full py-2 text-[10px] font-black text-slate-500 uppercase">Volver</button>
+        </form>
+      </motion.div>
+    </div>
+  );
+};
+
 // --- App ---
 
 export default function App() {
@@ -485,9 +567,13 @@ export default function App() {
   const fetchData = async () => {
     try {
       const [pRes, prodRes, qRes, persRes, credRes] = await Promise.all([
-        fetch('/api/partidas'), fetch('/api/products'), fetch('/api/queue'), fetch('/api/personas'), fetch('/api/creditos')
+        fetch('/api/partidas'), 
+        fetch('/api/negocio?type=products'), 
+        fetch('/api/musica'), 
+        fetch('/api/negocio?type=personas'), 
+        fetch('/api/caja?type=creditos')
       ]);
-      if (pRes.ok) setTables(await pRes.json());
+      if (pRes.ok) setTables(await pRes.ok ? await pRes.json() : []);
       if (prodRes.ok) setProducts(await prodRes.json());
       if (persRes.ok) setPersonas(await persRes.json());
       if (credRes.ok) setCreditos(await credRes.json());
@@ -507,12 +593,12 @@ export default function App() {
   }, []);
 
   const handleUpdateScore = async (partidaId, score1, score2) => {
-    await fetch('/api/tables', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partidaId, score1, score2 }) });
+    await fetch('/api/partidas', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partidaId, accion: 'update_score', score1, score2 }) });
     fetchData();
   };
 
   const handleStartMatch = async (tableId, formData) => {
-    await fetch('/api/partidas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mesaId: tableId, valorChico: parseInt(formData.precioChico || 1000) }) });
+    await fetch('/api/partidas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'start', mesaId: tableId, valorChico: parseInt(formData.precioChico || 1000) }) });
     setMatchModalOpen(false); fetchData();
   };
 
@@ -522,16 +608,16 @@ export default function App() {
   };
 
   const handleAddConsumo = async (consumo) => {
-    await fetch('/api/consumos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(consumo) });
+    await fetch('/api/partidas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...consumo, type: 'consumo' }) });
     fetchData();
   };
 
   const handleOrderConfirm = async (payouts, partidaId) => {
-    await fetch('/api/cuentas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_partida: partidaId, pagos: payouts }) });
+    await fetch('/api/partidas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'settle', id_partida: partidaId, pagos: payouts }) });
     setSettlementModalOpen(false); fetchData();
   };
 
-  if (isTVMode) return <TVView tables={tables} queue={queue} onSongEnd={id => fetch('/api/queue', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'played' }) }).then(fetchData)} />;
+  if (isTVMode) return <TVView tables={tables} queue={queue} onSongEnd={id => fetch('/api/musica', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, action: 'played' }) }).then(fetchData)} />;
   if (view === 'login') return <LoginView onLogin={u => { setUser(u.user); setView('dashboard'); localStorage.setItem('billar_user', JSON.stringify(u.user)); localStorage.setItem('billar_token', u.token); }} onGoToRegister={() => setView('register')} />;
   if (view === 'register') return <RegisterOwnerView onBack={() => setView('login')} />;
 

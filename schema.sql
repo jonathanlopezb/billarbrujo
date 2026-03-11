@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS clientes_credito CASCADE;
 -- Aseguramos columnas nuevas en productos.
 ALTER TABLE productos ADD COLUMN IF NOT EXISTS control_inventario BOOLEAN DEFAULT true;
 ALTER TABLE productos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT true;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS stock INTEGER DEFAULT 0;
 
 -- Aseguramos que existan las tablas maestras si están vacías, con Create if not exists (ya están de antes)
 CREATE TABLE IF NOT EXISTS usuarios (
@@ -57,6 +58,10 @@ CREATE TABLE IF NOT EXISTS partidas (
     mesa_id INTEGER REFERENCES mesas(id),
     valor_chico NUMERIC DEFAULT 1000,
     estado TEXT DEFAULT 'abierta' CHECK (estado IN ('abierta', 'cerrada')),
+    jugador1 TEXT,
+    jugador2 TEXT,
+    score1 INTEGER DEFAULT 0,
+    score2 INTEGER DEFAULT 0,
     fecha_inicio TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     fecha_fin TIMESTAMP WITH TIME ZONE
 );
