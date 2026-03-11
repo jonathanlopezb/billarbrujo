@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    rol TEXT NOT NULL CHECK (rol IN ('dueño', 'admin', 'mesero')),
+    rol TEXT NOT NULL CHECK (rol IN ('dueño', 'admin', 'mesero', 'contador')),
     nombre TEXT NOT NULL,
     creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
