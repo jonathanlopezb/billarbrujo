@@ -1,6 +1,29 @@
--- Tablas para el Sistema de Billar El Divino Niño
+-- Tablas para el Sistema de Billar El Divino Niño (NUEVA ARQUITECTURA)
 
--- Roles: 'dueño', 'admin', 'mesero'
+-- 1. LIMPIEZA DE TABLAS OBSOLETAS
+DROP TABLE IF EXISTS movimientos_inventario CASCADE;
+DROP TABLE IF EXISTS inventario CASCADE;
+DROP TABLE IF EXISTS consumos CASCADE;
+DROP TABLE IF EXISTS resultados_partida CASCADE;
+DROP TABLE IF EXISTS pagos_credito CASCADE;
+DROP TABLE IF EXISTS creditos CASCADE;
+DROP TABLE IF EXISTS pagos CASCADE;
+DROP TABLE IF EXISTS cuentas CASCADE;
+DROP TABLE IF EXISTS pareja_persona CASCADE;
+DROP TABLE IF EXISTS parejas CASCADE;
+DROP TABLE IF EXISTS partidas CASCADE;
+DROP TABLE IF EXISTS personas CASCADE;
+DROP TABLE IF EXISTS pedido_items CASCADE;
+DROP TABLE IF EXISTS pedidos CASCADE;
+DROP TABLE IF EXISTS historial_creditos CASCADE;
+DROP TABLE IF EXISTS clientes_credito CASCADE;
+
+-- Mantenemos usuarios, mesas, productos, cola_musica sin borrar, ya que son base.
+-- Aseguramos columnas nuevas en productos.
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS control_inventario BOOLEAN DEFAULT true;
+ALTER TABLE productos ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT true;
+
+-- Aseguramos que existan las tablas maestras si están vacías, con Create if not exists (ya están de antes)
 CREATE TABLE IF NOT EXISTS usuarios (
     id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
@@ -10,7 +33,6 @@ CREATE TABLE IF NOT EXISTS usuarios (
     creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Mesas de billar
 CREATE TABLE IF NOT EXISTS mesas (
     id SERIAL PRIMARY KEY,
     numero INTEGER UNIQUE NOT NULL,
@@ -19,101 +41,133 @@ CREATE TABLE IF NOT EXISTS mesas (
     creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Partidas activas o históricas
-CREATE TABLE IF NOT EXISTS partidas (
-    id SERIAL PRIMARY KEY,
-    mesa_id INTEGER REFERENCES mesas(id),
-    jugador1 TEXT,
-    jugador2 TEXT,
-    score1 INTEGER DEFAULT 0,
-    score2 INTEGER DEFAULT 0,
-    inicio TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    fin TIMESTAMP WITH TIME ZONE,
-    tarifa_hora NUMERIC DEFAULT 15000,
-    total_mesa NUMERIC DEFAULT 0,
-    pagado BOOLEAN DEFAULT FALSE,
-    creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Productos del bar
-CREATE TABLE IF NOT EXISTS productos (
-    id SERIAL PRIMARY KEY,
-    nombre TEXT NOT NULL,
-    precio NUMERIC NOT NULL,
-    categoria TEXT DEFAULT 'bebida',
-    stock INTEGER DEFAULT 0,
-    imagen_url TEXT,
-    creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Pedidos vinculados a una mesa o venta directa
-CREATE TABLE IF NOT EXISTS pedidos (
-    id SERIAL PRIMARY KEY,
-    partida_id INTEGER REFERENCES partidas(id), -- NULL si es venta directa
-    cliente_nombre TEXT, -- Para ventas directas
-    usuario_id INTEGER REFERENCES usuarios(id), -- Quien tomó el pedido
-    total NUMERIC DEFAULT 0,
-    estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'entregado', 'pagado', 'cancelado')),
-    metodo_pago TEXT DEFAULT 'efectivo' CHECK (metodo_pago IN ('efectivo', 'fiado')),
-    creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Items de cada pedido
-CREATE TABLE IF NOT EXISTS pedido_items (
-    id SERIAL PRIMARY KEY,
-    pedido_id INTEGER REFERENCES pedidos(id) ON DELETE CASCADE,
-    producto_id INTEGER REFERENCES productos(id),
-    cantidad INTEGER NOT NULL DEFAULT 1,
-    precio_unitario NUMERIC NOT NULL,
-    creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- Usuarios con crédito (fiado)
-CREATE TABLE IF NOT EXISTS clientes_credito (
+-- 2. Tabla PERSONAS
+CREATE TABLE IF NOT EXISTS personas (
     id SERIAL PRIMARY KEY,
     nombre TEXT NOT NULL,
     telefono TEXT,
-    deuda_total NUMERIC DEFAULT 0,
+    es_cliente_frecuente BOOLEAN DEFAULT false,
+    activo BOOLEAN DEFAULT true,
     creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Historial de abonos/créditos
-CREATE TABLE IF NOT EXISTS historial_creditos (
+-- 3. Tabla PARTIDAS
+CREATE TABLE IF NOT EXISTS partidas (
     id SERIAL PRIMARY KEY,
-    cliente_id INTEGER REFERENCES clientes_credito(id),
-    monto NUMERIC NOT NULL,
-    tipo TEXT CHECK (tipo IN ('consumo', 'abono')),
-    descripcion TEXT,
-    creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    mesa_id INTEGER REFERENCES mesas(id),
+    valor_chico NUMERIC DEFAULT 1000,
+    estado TEXT DEFAULT 'abierta' CHECK (estado IN ('abierta', 'cerrada')),
+    fecha_inicio TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    fecha_fin TIMESTAMP WITH TIME ZONE
 );
 
--- Cola de música
-CREATE TABLE IF NOT EXISTS cola_musica (
+-- 4. Tabla PAREJAS
+CREATE TABLE IF NOT EXISTS parejas (
     id SERIAL PRIMARY KEY,
-    titulo TEXT NOT NULL,
-    video_id TEXT NOT NULL, -- YouTube ID
-    solicitado_por TEXT,
-    reproducida BOOLEAN DEFAULT FALSE,
-    creado_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    id_partida INTEGER REFERENCES partidas(id) ON DELETE CASCADE,
+    nombre TEXT CHECK (nombre IN ('A', 'B'))
 );
 
--- Datos iniciales
-INSERT INTO usuarios (username, password_hash, rol, nombre) VALUES 
-('admin', '$2b$10$YourHashedPasswordHere', 'dueño', 'Administrador Principal')
-ON CONFLICT DO NOTHING;
+-- 5. Tabla PAREJA_PERSONA
+CREATE TABLE IF NOT EXISTS pareja_persona (
+    id SERIAL PRIMARY KEY,
+    id_pareja INTEGER REFERENCES parejas(id) ON DELETE CASCADE,
+    id_persona INTEGER REFERENCES personas(id)
+);
 
-INSERT INTO mesas (numero, nombre) VALUES 
-(1, 'Mesa 1'),
-(2, 'Mesa 2'),
-(3, 'Mesa 3'),
-(4, 'Mesa 4')
-ON CONFLICT DO NOTHING;
+-- 7. Tabla INVENTARIO
+CREATE TABLE IF NOT EXISTS inventario (
+    id_producto INTEGER PRIMARY KEY REFERENCES productos(id) ON DELETE CASCADE,
+    stock_actual INTEGER DEFAULT 0,
+    stock_minimo INTEGER DEFAULT 0,
+    ultima_actualizacion TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
 
-INSERT INTO productos (nombre, precio, categoria) VALUES 
-('Cerveza Club Colombia', 5000, 'bebida'),
-('Cerveza Aguila', 4500, 'bebida'),
-('Gaseosa 350ml', 3000, 'bebida'),
-('Agua Mineral', 2500, 'bebida'),
-('Empanada', 2000, 'comida'),
-('Papas Fritas', 3500, 'comida')
-ON CONFLICT DO NOTHING;
+-- 8. Tabla MOVIMIENTOS_INVENTARIO
+CREATE TABLE IF NOT EXISTS movimientos_inventario (
+    id SERIAL PRIMARY KEY,
+    id_producto INTEGER REFERENCES productos(id),
+    cantidad INTEGER NOT NULL,
+    tipo TEXT CHECK (tipo IN ('venta', 'compra', 'ajuste')),
+    referencia_id INTEGER, -- Puede referenciar id_consumo
+    fecha TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. Tabla CONSUMOS
+CREATE TABLE IF NOT EXISTS consumos (
+    id SERIAL PRIMARY KEY,
+    id_partida INTEGER REFERENCES partidas(id) ON DELETE CASCADE,
+    tipo_consumo TEXT CHECK (tipo_consumo IN ('persona', 'pareja', 'directo')),
+    id_persona INTEGER REFERENCES personas(id),
+    id_pareja INTEGER REFERENCES parejas(id),
+    id_producto INTEGER REFERENCES productos(id),
+    cantidad INTEGER NOT NULL DEFAULT 1,
+    precio_unitario NUMERIC NOT NULL,
+    total NUMERIC NOT NULL,
+    fecha TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 10. RESULTADOS DEL CHICO
+CREATE TABLE IF NOT EXISTS resultados_partida (
+    id SERIAL PRIMARY KEY,
+    id_partida INTEGER REFERENCES partidas(id) ON DELETE CASCADE,
+    id_pareja_ganadora INTEGER REFERENCES parejas(id),
+    valor_chico NUMERIC DEFAULT 1000,
+    fecha TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 11. Tabla CUENTAS
+CREATE TABLE IF NOT EXISTS cuentas (
+    id SERIAL PRIMARY KEY,
+    tipo TEXT CHECK (tipo IN ('persona', 'pareja', 'directo')),
+    id_persona INTEGER REFERENCES personas(id),
+    id_pareja INTEGER REFERENCES parejas(id),
+    id_partida INTEGER REFERENCES partidas(id) ON DELETE CASCADE,
+    total NUMERIC DEFAULT 0,
+    estado TEXT DEFAULT 'abierta' CHECK (estado IN ('abierta', 'pagada', 'credito'))
+);
+
+-- 12. Tabla PAGOS
+CREATE TABLE IF NOT EXISTS pagos (
+    id SERIAL PRIMARY KEY,
+    id_cuenta INTEGER REFERENCES cuentas(id) ON DELETE CASCADE,
+    metodo_pago TEXT CHECK (metodo_pago IN ('efectivo', 'nequi', 'transferencia', 'credito')),
+    valor NUMERIC NOT NULL,
+    fecha TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    usuario_registro TEXT
+);
+
+-- 13. Tabla CREDITOS
+-- "Las personas individuales también pueden obtener un crédito que piden sin estar en mesa"
+-- Por eso id_cuenta puede ser nulo o la cuenta ser tipo "directo"
+CREATE TABLE IF NOT EXISTS creditos (
+    id SERIAL PRIMARY KEY,
+    id_persona INTEGER REFERENCES personas(id),
+    id_cuenta INTEGER REFERENCES cuentas(id) ON DELETE CASCADE, -- Null si es directo sin cuenta referenciada
+    valor NUMERIC NOT NULL,
+    fecha_credito TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    fecha_limite DATE,
+    estado TEXT DEFAULT 'pendiente' CHECK (estado IN ('pendiente', 'pagado', 'vencido')),
+    observaciones TEXT
+);
+
+-- 14. Tabla PAGOS_CREDITO
+CREATE TABLE IF NOT EXISTS pagos_credito (
+    id SERIAL PRIMARY KEY,
+    id_credito INTEGER REFERENCES creditos(id) ON DELETE CASCADE,
+    valor NUMERIC NOT NULL,
+    metodo_pago TEXT CHECK (metodo_pago IN ('efectivo', 'nequi', 'transferencia')),
+    fecha_pago TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 15. CAJA DIARIA
+CREATE TABLE IF NOT EXISTS caja_diaria (
+    id SERIAL PRIMARY KEY,
+    fecha DATE UNIQUE NOT NULL DEFAULT CURRENT_DATE,
+    ventas_efectivo NUMERIC DEFAULT 0,
+    ventas_nequi NUMERIC DEFAULT 0,
+    ventas_transferencia NUMERIC DEFAULT 0,
+    creditos_generados NUMERIC DEFAULT 0,
+    creditos_pagados NUMERIC DEFAULT 0,
+    total_dia NUMERIC DEFAULT 0
+);
