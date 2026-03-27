@@ -243,28 +243,28 @@ const TVView = ({ tables, queue, onSongEnd }) => {
   return (
     <div className="h-screen w-screen bg-[#05060a] z-[100] flex overflow-hidden text-white font-sans relative">
       <AnimatePresence>{tvMsg && <motion.div initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }} className="absolute top-0 left-0 right-0 bg-billar-neon text-black py-4 text-3xl text-center font-black z-[200]">📢 {tvMsg}</motion.div>}</AnimatePresence>
-      <div className="flex-[2] p-10 flex flex-col border-r border-white/5">
-        <div className="flex justify-between items-center mb-12">
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 bg-billar-neon rounded-2xl flex items-center justify-center shadow-neon-glow"><span className="text-4xl">🎱</span></div>
-            <h1 className="text-5xl font-black italic uppercase">MESAS <span className="text-billar-neon">ACTIVAS</span></h1>
+      <div className="flex-[2] p-8 flex flex-col border-r border-white/5">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-billar-neon rounded-xl flex items-center justify-center shadow-neon-glow"><span className="text-2xl">🎱</span></div>
+            <h1 className="text-3xl font-black italic uppercase">MESAS <span className="text-billar-neon">ACTIVAS</span></h1>
           </div>
-          <p className="text-3xl font-black font-mono text-billar-neon bg-white/5 py-3 px-6 rounded-2xl border border-white/5">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+          <p className="text-xl font-black font-mono text-billar-neon bg-white/5 py-2 px-5 rounded-xl border border-white/5">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
         </div>
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 h-full overflow-y-auto pr-4 custom-scrollbar">
-          {tables.map(table => (
-            <div key={table.id} className={`glass-card p-6 flex flex-col relative overflow-hidden border-none ${table.estado === 'ocupada' ? 'bg-billar-neon/[0.05] shadow-neon-glow' : 'opacity-30 bg-black/40'} min-h-[300px]`}>
-              <div className="flex justify-between items-center mb-4"><h3 className="text-3xl font-black italic">{table.nombre}</h3><span className={`text-[10px] font-black px-3 py-1 rounded-full ${table.estado === 'ocupada' ? 'bg-billar-neon text-black' : 'bg-white/10'}`}>{table.estado === 'ocupada' ? 'OCUPADA' : 'LIBRE'}</span></div>
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full overflow-y-auto pr-4 custom-scrollbar items-start">
+          {tables.slice(0, 3).map(table => (
+            <div key={table.id} className={`glass-card p-5 flex flex-col relative overflow-hidden border-none ${table.estado === 'ocupada' ? 'bg-billar-neon/[0.05] shadow-neon-glow' : 'opacity-30 bg-black/40'}`}>
+              <div className="flex justify-between items-center mb-3"><h3 className="text-2xl font-black italic">{table.nombre}</h3><span className={`text-[8px] font-black px-2 py-0.5 rounded-full ${table.estado === 'ocupada' ? 'bg-billar-neon text-black' : 'bg-white/10'}`}>{table.estado === 'ocupada' ? 'OCUPADA' : 'LIBRE'}</span></div>
               {table.estado === 'ocupada' ? (
-                <div className="flex-1 flex flex-col justify-center gap-6">
+                <div className="flex-1 flex flex-col justify-center gap-4">
                   <div className="flex justify-around items-center">
-                    <div className="text-center space-y-2"><p className="text-7xl font-black text-white">{table.score1 || 0}</p><p className="text-[10px] font-black text-slate-400 uppercase max-w-[120px] truncate mx-auto">{table.jugador1 || '---'}</p></div>
-                    <div className="text-xl font-black text-slate-800 italic">VS</div>
-                    <div className="text-center space-y-2"><p className="text-7xl font-black text-white">{table.score2 || 0}</p><p className="text-[10px] font-black text-slate-400 uppercase max-w-[120px] truncate mx-auto">{table.jugador2 || '---'}</p></div>
+                    <div className="text-center space-y-1"><p className="text-6xl font-black text-white">{table.score1 || 0}</p><p className="text-[9px] font-black text-slate-400 uppercase max-w-[100px] truncate mx-auto">{table.jugador1 || '---'}</p></div>
+                    <div className="text-lg font-black text-slate-800 italic">VS</div>
+                    <div className="text-center space-y-1"><p className="text-6xl font-black text-white">{table.score2 || 0}</p><p className="text-[9px] font-black text-slate-400 uppercase max-w-[100px] truncate mx-auto">{table.jugador2 || '---'}</p></div>
                   </div>
-                  <div className="flex items-center justify-center gap-4 bg-white/5 py-3 rounded-2xl mt-auto"><Clock className="text-billar-neon" size={18} /><p className="text-2xl font-black font-mono"><Timer start={table.inicio} /></p></div>
+                  <div className="flex items-center justify-center gap-3 bg-white/5 py-2 rounded-xl mt-4"><Clock className="text-billar-neon" size={14} /><p className="text-xl font-black font-mono"><Timer start={table.inicio} /></p></div>
                 </div>
-              ) : <div className="flex-1 flex items-center justify-center opacity-10"><TableIcon size={100} /></div>}
+              ) : <div className="py-12 flex items-center justify-center opacity-10"><TableIcon size={80} /></div>}
             </div>
           ))}
         </div>
