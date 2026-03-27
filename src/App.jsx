@@ -277,39 +277,38 @@ const TVView = ({ tables, queue, onSongEnd }) => {
           ))}
         </div>
       </div>
-         <div className="w-[390px] bg-[#08090d] p-8 flex flex-col border-l border-white/5">
-            <div className="flex items-center gap-3 mb-6"><Music className="text-billar-purple pb-1" size={24} /><h2 className="text-xl font-black italic tracking-tighter">ROCKOLA <span className="text-billar-purple">LIVE</span></h2></div>
-            <div className="mb-8 p-6 rounded-3xl bg-billar-purple/10 border border-billar-purple/20 relative overflow-hidden">
-               <div className="text-[9px] font-black text-billar-purple uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-billar-purple rounded-full animate-ping" />
-                  REPRODUCIENDO AHORA
-               </div>
-               {queue[0] ? (
-                 <div className="space-y-4">
-                   <h3 className="text-2xl font-black italic uppercase leading-tight line-clamp-3 text-white drop-shadow-[0_0_10px_purple]">{queue[0].titulo}</h3>
-                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-2">{queue[0].solicitado_por || 'CLIENTE'}</p>
-                 </div>
-               ) : <div className="py-8 text-center opacity-30 italic font-black uppercase tracking-widest text-[10px]">Sin música</div>}
+      <div className="w-[390px] bg-[#08090d] p-8 flex flex-col border-l border-white/5">
+        <div className="flex items-center gap-3 mb-6"><Music className="text-billar-purple pb-1" size={24} /><h2 className="text-xl font-black italic tracking-tighter">ROCKOLA <span className="text-billar-purple">LIVE</span></h2></div>
+        <div className="mb-8 p-6 rounded-3xl bg-billar-purple/10 border border-billar-purple/20 relative overflow-hidden">
+          <div className="text-[9px] font-black text-billar-purple uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 bg-billar-purple rounded-full animate-ping" />
+            REPRODUCIENDO AHORA
+          </div>
+          {queue[0] ? (
+            <div className="space-y-4">
+              <h3 className="text-2xl font-black italic uppercase leading-tight line-clamp-3 text-white drop-shadow-[0_0_10px_purple]">{queue[0].titulo}</h3>
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-2">{queue[0].solicitado_por || 'CLIENTE'}</p>
             </div>
-            </div>
-         <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 italic">Próximas en cola:</p>
-            {queue.slice(1, 4).map((song, i) => (
-              <div key={song.id} className="flex flex-col gap-1 p-5 rounded-2xl bg-white/[0.03] border border-white/5 relative overflow-hidden group">
-                 <div className="absolute top-0 left-0 w-1 h-full bg-billar-purple opacity-40 shadow-[0_0_10px_purple]" />
-                 <div className="flex justify-between items-center mb-1">
-                   <span className="text-[8px] font-black text-billar-purple uppercase tracking-tighter">Turno #0{i+1}</span>
-                 </div>
-                 <p className="font-bold text-sm leading-tight italic line-clamp-2 uppercase">{song.title}</p>
-                 {song.solicitado_por && <p className="text-[8px] font-black text-slate-600 uppercase mt-1">Pide: {song.solicitado_por}</p>}
+          ) : <div className="py-8 text-center opacity-30 italic font-black uppercase tracking-widest text-[10px]">Sin música</div>}
+        </div>
+        <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 italic">Próximas en cola:</p>
+          {queue.slice(1, 4).map((song, i) => (
+            <div key={song.id} className="flex flex-col gap-1 p-5 rounded-2xl bg-white/[0.03] border border-white/5 relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1 h-full bg-billar-purple opacity-40 shadow-[0_0_10px_purple]" />
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[8px] font-black text-billar-purple uppercase tracking-tighter">Turno #0{i+1}</span>
               </div>
-            ))}
-            {queue.length <= 1 && <div className="py-16 text-center opacity-20 flex flex-col items-center gap-4"><Music size={32} /><p className="text-[10px] uppercase font-black tracking-widest">Cola vacía</p></div>}
-         </div>
-         <div className="mt-8 pt-6 border-t border-white/5 flex flex-col items-center gap-4">
-            <div className="bg-white p-2 rounded-xl"><QRCode value={window.location.origin + "/music-box"} size={80} /></div>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Pide tu música aquí</p>
-         </div>
+              <p className="font-bold text-sm leading-tight italic line-clamp-2 uppercase">{song.title}</p>
+              {song.solicitado_por && <p className="text-[8px] font-black text-slate-600 uppercase mt-1">Pide: {song.solicitado_por}</p>}
+            </div>
+          ))}
+          {queue.length <= 1 && <div className="py-16 text-center opacity-20 flex flex-col items-center gap-4"><Music size={32} /><p className="text-[10px] uppercase font-black tracking-widest">Cola vacía</p></div>}
+        </div>
+        <div className="mt-8 pt-6 border-t border-white/5 flex flex-col items-center gap-4">
+          <div className="bg-white p-2 rounded-xl"><QRCode value={window.location.origin + "/music-box"} size={80} /></div>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-center">Pide tu música aquí</p>
+        </div>
       </div>
     </div>
   );

@@ -94,7 +94,9 @@ export default async function handler(req, res) {
         }
         await sql`UPDATE partidas SET estado = 'cerrada', fecha_fin = CURRENT_TIMESTAMP WHERE id = ${id_partida}`;
         const [part] = await sql`SELECT mesa_id FROM partidas WHERE id = ${id_partida}`;
-        await sql`UPDATE mesas SET estado = 'disponible' WHERE id = ${part.mesa_id}`;
+        if (part) {
+          await sql`UPDATE mesas SET estado = 'disponible' WHERE id = ${part.mesa_id}`;
+        }
         return res.status(200).json({ ok: true });
       } catch (e) { return res.status(500).json({ error: e.message }); }
     }
