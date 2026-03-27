@@ -47,9 +47,9 @@ export default async function handler(req, res) {
 
     // START MATCH
     if (type === 'start') {
-      const { mesaId, valorChico } = req.body;
+      const { mesaId, valorChico, jugador1, jugador2 } = req.body;
       try {
-        const [partida] = await sql`INSERT INTO partidas (mesa_id, valor_chico) VALUES (${mesaId}, ${valorChico || 1000}) RETURNING *`;
+        const [partida] = await sql`INSERT INTO partidas (mesa_id, valor_chico, jugador1, jugador2) VALUES (${mesaId}, ${valorChico || 1000}, ${jugador1 || '---'}, ${jugador2 || '---'}) RETURNING *`;
         await sql`UPDATE mesas SET estado = 'ocupada' WHERE id = ${mesaId}`;
         await sql`INSERT INTO parejas (id_partida, nombre) VALUES (${partida.id}, 'A'), (${partida.id}, 'B')`;
         return res.status(201).json(partida);

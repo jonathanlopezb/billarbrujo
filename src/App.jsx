@@ -251,20 +251,20 @@ const TVView = ({ tables, queue, onSongEnd }) => {
           </div>
           <p className="text-3xl font-black font-mono text-billar-neon bg-white/5 py-3 px-6 rounded-2xl border border-white/5">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
         </div>
-        <div className="flex-1 grid grid-cols-2 gap-8 h-full">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 h-full overflow-y-auto pr-4 custom-scrollbar">
           {tables.map(table => (
-            <div key={table.id} className={`glass-card p-8 flex flex-col relative overflow-hidden border-none ${table.estado === 'ocupada' ? 'bg-billar-neon/[0.05] shadow-neon-glow' : 'opacity-30 bg-black/40'}`}>
-              <div className="flex justify-between items-center mb-6"><h3 className="text-4xl font-black italic">{table.nombre}</h3><span className={`text-[10px] font-black px-3 py-1 rounded-full ${table.estado === 'ocupada' ? 'bg-billar-neon text-black' : 'bg-white/10'}`}>{table.estado === 'ocupada' ? 'OCUPADA' : 'LIBRE'}</span></div>
+            <div key={table.id} className={`glass-card p-6 flex flex-col relative overflow-hidden border-none ${table.estado === 'ocupada' ? 'bg-billar-neon/[0.05] shadow-neon-glow' : 'opacity-30 bg-black/40'} min-h-[300px]`}>
+              <div className="flex justify-between items-center mb-4"><h3 className="text-3xl font-black italic">{table.nombre}</h3><span className={`text-[10px] font-black px-3 py-1 rounded-full ${table.estado === 'ocupada' ? 'bg-billar-neon text-black' : 'bg-white/10'}`}>{table.estado === 'ocupada' ? 'OCUPADA' : 'LIBRE'}</span></div>
               {table.estado === 'ocupada' ? (
-                <div className="flex-1 flex flex-col justify-center gap-8">
+                <div className="flex-1 flex flex-col justify-center gap-6">
                   <div className="flex justify-around items-center">
-                    <div className="text-center space-y-2"><p className="text-8xl font-black text-white">{table.score1 || 0}</p><p className="text-sm font-black text-slate-400 uppercase">{table.jugador1 || '---'}</p></div>
-                    <div className="text-2xl font-black text-slate-800 italic">VS</div>
-                    <div className="text-center space-y-2"><p className="text-8xl font-black text-white">{table.score2 || 0}</p><p className="text-sm font-black text-slate-400 uppercase">{table.jugador2 || '---'}</p></div>
+                    <div className="text-center space-y-2"><p className="text-7xl font-black text-white">{table.score1 || 0}</p><p className="text-[10px] font-black text-slate-400 uppercase max-w-[120px] truncate mx-auto">{table.jugador1 || '---'}</p></div>
+                    <div className="text-xl font-black text-slate-800 italic">VS</div>
+                    <div className="text-center space-y-2"><p className="text-7xl font-black text-white">{table.score2 || 0}</p><p className="text-[10px] font-black text-slate-400 uppercase max-w-[120px] truncate mx-auto">{table.jugador2 || '---'}</p></div>
                   </div>
-                  <div className="flex items-center justify-center gap-4 bg-white/5 py-4 rounded-3xl mt-auto"><Clock className="text-billar-neon" size={24} /><p className="text-4xl font-black font-mono"><Timer start={table.inicio} /></p></div>
+                  <div className="flex items-center justify-center gap-4 bg-white/5 py-3 rounded-2xl mt-auto"><Clock className="text-billar-neon" size={18} /><p className="text-2xl font-black font-mono"><Timer start={table.inicio} /></p></div>
                 </div>
-              ) : <div className="flex-1 flex items-center justify-center opacity-10"><TableIcon size={120} /></div>}
+              ) : <div className="flex-1 flex items-center justify-center opacity-10"><TableIcon size={100} /></div>}
             </div>
           ))}
         </div>
@@ -622,14 +622,21 @@ const PersonasView = ({ personas, onUpdate }) => {
 
 const StartMatchModal = ({ isOpen, tableId, onClose, onConfirm }) => {
   const [precioChico, setPrecioChico] = useState(1000);
+  const [jugador1, setJugador1] = useState('');
+  const [jugador2, setJugador2] = useState('');
+
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[4000] flex items-center justify-center p-6 bg-black/90 backdrop-blur-md">
       <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-10 w-full max-w-md border-billar-neon/20">
         <h2 className="text-3xl font-black italic uppercase italic tracking-tighter mb-8 text-center text-billar-neon underline decoration-4 underline-offset-8">Abrir Mesa</h2>
         <div className="space-y-6">
-          <div><label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Precio por Chico ($)</label><input type="number" className="w-full neon-input py-4 text-center text-2xl" value={precioChico} onChange={e => setPrecioChico(e.target.value)} /></div>
-          <button onClick={() => onConfirm(tableId, { precioChico })} className="w-full neon-button py-5 text-xl font-black italic uppercase tracking-tighter shadow-neon-glow">EMPEZAR PARTIDA</button>
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Equipo/Jugador 1</label><input className="w-full neon-input py-2 text-xs" value={jugador1} onChange={e => setJugador1(e.target.value)} placeholder="Nombre..." /></div>
+            <div><label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Equipo/Jugador 2</label><input className="w-full neon-input py-2 text-xs" value={jugador2} onChange={e => setJugador2(e.target.value)} placeholder="Nombre..." /></div>
+          </div>
+          <div><label className="text-[10px] font-black text-slate-500 uppercase block mb-1">Precio por Chico ($)</label><input type="number" className="w-full neon-input py-3 text-center text-xl" value={precioChico} onChange={e => setPrecioChico(e.target.value)} /></div>
+          <button onClick={() => onConfirm(tableId, { precioChico, jugador1, jugador2 })} className="w-full neon-button py-5 text-xl font-black italic uppercase tracking-tighter shadow-neon-glow">EMPEZAR PARTIDA</button>
           <button onClick={onClose} className="w-full py-2 text-xs font-black text-slate-500 uppercase hover:text-white transition-all">Cancelar</button>
         </div>
       </motion.div>
@@ -754,7 +761,17 @@ export default function App() {
   };
 
   const handleStartMatch = async (tableId, formData) => {
-    await fetch('/api/partidas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'start', mesaId: tableId, valorChico: parseInt(formData.precioChico || 1000) }) });
+    await fetch('/api/partidas', { 
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify({ 
+        type: 'start', 
+        mesaId: tableId, 
+        valorChico: parseInt(formData.precioChico || 1000),
+        jugador1: formData.jugador1,
+        jugador2: formData.jugador2
+      }) 
+    });
     setMatchModalOpen(false); fetchData();
   };
 
