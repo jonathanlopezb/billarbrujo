@@ -282,10 +282,19 @@ const TVView = ({ tables, queue, onSongEnd }) => {
          <div className="rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center border border-white/5 mb-8">
            {queue[0] ? <YouTube videoId={queue[0].videoId} onEnd={() => onSongEnd(queue[0].id)} className="w-full h-full" opts={{ width: '100%', height: '100%', playerVars: { autoplay: 1, controls: 0 } }} /> : <Music size={40} className="text-slate-800" />}
          </div>
-         <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-            {queue.slice(1, 8).map((song, i) => (
-              <div key={song.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/5"><span className="text-xs font-black text-slate-700">0{i+2}</span><p className="font-bold text-[11px] truncate">{song.title}</p></div>
+         <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 italic">Próximas en cola:</p>
+            {queue.slice(1, 4).map((song, i) => (
+              <div key={song.id} className="flex flex-col gap-1 p-5 rounded-2xl bg-white/[0.03] border border-white/5 relative overflow-hidden group">
+                 <div className="absolute top-0 left-0 w-1 h-full bg-billar-purple opacity-40 shadow-[0_0_10px_purple]" />
+                 <div className="flex justify-between items-center mb-1">
+                   <span className="text-[8px] font-black text-billar-purple uppercase tracking-tighter">Turno #0{i+1}</span>
+                 </div>
+                 <p className="font-bold text-sm leading-tight italic line-clamp-2 uppercase">{song.title}</p>
+                 {song.solicitado_por && <p className="text-[8px] font-black text-slate-600 uppercase mt-1">Pide: {song.solicitado_por}</p>}
+              </div>
             ))}
+            {queue.length <= 1 && <div className="py-16 text-center opacity-20 flex flex-col items-center gap-4"><Music size={32} /><p className="text-[10px] uppercase font-black tracking-widest">Cola vacía</p></div>}
          </div>
          <div className="mt-8 pt-6 border-t border-white/5 flex flex-col items-center gap-4">
             <div className="bg-white p-2 rounded-xl"><QRCode value={window.location.origin + "/music-box"} size={80} /></div>
