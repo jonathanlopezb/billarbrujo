@@ -286,12 +286,11 @@ const TVView = ({ tables, queue, onSongEnd }) => {
                </div>
                {queue[0] ? (
                  <div className="space-y-4">
-                   <h3 className="text-xl font-black italic uppercase leading-tight line-clamp-2">{queue[0].titulo}</h3>
-                   <div className="hidden">
-                     <YouTube videoId={queue[0].videoId} onEnd={() => onSongEnd(queue[0].id)} opts={{ height: '0', width: '0', playerVars: { autoplay: 1 } }} />
-                   </div>
+                   <h3 className="text-2xl font-black italic uppercase leading-tight line-clamp-3 text-white drop-shadow-[0_0_10px_purple]">{queue[0].titulo}</h3>
+                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-2">{queue[0].solicitado_por || 'CLIENTE'}</p>
                  </div>
-               ) : <div className="py-8 text-center opacity-30"><Music size={32} className="mx-auto mb-2" /><p className="text-[10px] font-black uppercase">SIN MÚSICA</p></div>}
+               ) : <div className="py-8 text-center opacity-30 italic font-black uppercase tracking-widest text-[10px]">Sin música</div>}
+            </div>
             </div>
          <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 italic">Próximas en cola:</p>
@@ -873,6 +872,12 @@ export default function App() {
         setSaleModalOpen(false); 
       }} selectedTable={selectedTable} personas={personas} />
       <SettlementModal isOpen={settlementModalOpen} table={selectedTable} onClose={() => setSettlementModalOpen(false)} onConfirm={handleOrderConfirm} personas={personas} />
+      {/* Reproductor Maestro de Sonido (Solo en PC) */}
+      {!isTVMode && queue[0] && (
+        <div className="hidden">
+           <YouTube videoId={queue[0].videoId} onEnd={() => fetch('/api/musica', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: queue[0].id, action: 'played' }) }).then(fetchData)} opts={{ height: '0', width: '0', playerVars: { autoplay: 1 } }} />
+        </div>
+      )}
     </div>
   );
 }
