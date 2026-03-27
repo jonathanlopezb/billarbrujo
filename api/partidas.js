@@ -35,6 +35,10 @@ export default async function handler(req, res) {
             const c = chicos.find(x => x.id_pareja_ganadora === pare.id);
             pare.chicos_ganados = c ? parseInt(c.ganados) : 0;
           }
+        } else {
+          t.estado = 'disponible';
+          t.partida_id = null;
+          t.parejas = [];
         }
       }
       return res.status(200).json(mesas);
@@ -92,13 +96,22 @@ export default async function handler(req, res) {
             await sql`INSERT INTO caja_diaria (fecha, creditos_generados) VALUES (CURRENT_DATE, ${p.total}) ON CONFLICT (fecha) DO UPDATE SET creditos_generados = caja_diaria.creditos_generados + ${p.total}`;
           }
         }
-        await sql`UPDATE partidas SET estado = 'cerrada', fecha_fin = CURRENT_TIMESTAMP WHERE id = ${id_partida}`;
+        // FIRST: Find the mesa associated with this partida
         const [part] = await sql`SELECT mesa_id FROM partidas WHERE id = ${id_partida}`;
+        
+        // Mark match as closed
+        await sql`UPDATE partidas SET estado = 'cerrada', fecha_fin = CURRENT_TIMESTAMP WHERE id = ${id_partida}`;
+        
+        // IMPORTANT: Mark mesa as available in all cases
         if (part) {
           await sql`UPDATE mesas SET estado = 'disponible' WHERE id = ${part.mesa_id}`;
         }
+        
         return res.status(200).json({ ok: true });
-      } catch (e) { return res.status(500).json({ error: e.message }); }
+      } catch (e) { 
+        console.error('Error settling:', e);
+        return res.status(500).json({ error: e.message }); 
+      }
     }
   }
 
