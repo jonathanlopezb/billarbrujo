@@ -16,7 +16,7 @@ export default async function handler(req, res) {
       return res.status(200).json(formattedResults);
     } catch (error) {
       console.error('Error YouTube:', error);
-      return res.status(500).json({ error: 'Error al buscar' });
+      return res.status(500).json({ error: error.message || 'Error al buscar' });
     }
   }
 
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       const queue = await sql`SELECT * FROM cola_musica WHERE estado = 'pendiente' ORDER BY creado_at ASC`;
       return res.status(200).json(queue);
     } catch (error) {
-      return res.status(500).json({ error: 'Error al obtener cola' });
+      return res.status(500).json({ error: error.message });
     }
   }
 
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
       `;
       return res.status(201).json(song);
     } catch (error) {
-      return res.status(500).json({ error: 'Error al añadir' });
+      return res.status(500).json({ error: error.message });
     }
   }
 
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
       }
       return res.status(200).json({ ok: true });
     } catch (error) {
-      return res.status(500).json({ error: 'Error al actualizar' });
+      return res.status(500).json({ error: error.message });
     }
   }
 
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
       await sql`DELETE FROM cola_musica WHERE id = ${id}`;
       return res.status(200).json({ ok: true });
     } catch (error) {
-      return res.status(500).json({ error: 'Error al borrar' });
+      return res.status(500).json({ error: error.message });
     }
   }
 

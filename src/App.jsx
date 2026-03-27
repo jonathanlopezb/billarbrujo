@@ -125,7 +125,7 @@ const TableCard = ({ table, onStartMatch, onSettleMatch, onAddConsumo, onRegistr
   );
 };
 
-const DashboardView = ({ tables, onStartMatch, onSettleMatch, onAddConsumo, onNewSale, onRegistrarChico }) => (
+const DashboardView = ({ tables, stats, onStartMatch, onSettleMatch, onAddConsumo, onNewSale, onRegistrarChico }) => (
   <div className="p-8">
     <div className="flex justify-between items-end mb-10">
       <div><h2 className="text-4xl font-black italic uppercase tracking-tighter">SALA DE <span className="text-billar-neon">BILLAR</span></h2><p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Gestión de mesas y partidas en tiempo real</p></div>
