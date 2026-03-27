@@ -258,9 +258,17 @@ const TVView = ({ tables, queue, onSongEnd }) => {
               {table.estado === 'ocupada' ? (
                 <div className="flex-1 flex flex-col justify-center gap-4">
                   <div className="flex justify-around items-center">
-                    <div className="text-center space-y-1"><p className="text-6xl font-black text-white">{table.score1 || 0}</p><p className="text-[9px] font-black text-slate-400 uppercase max-w-[100px] truncate mx-auto">{table.jugador1 || '---'}</p></div>
-                    <div className="text-lg font-black text-slate-800 italic">VS</div>
-                    <div className="text-center space-y-1"><p className="text-6xl font-black text-white">{table.score2 || 0}</p><p className="text-[9px] font-black text-slate-400 uppercase max-w-[100px] truncate mx-auto">{table.jugador2 || '---'}</p></div>
+                    <div className="text-center space-y-1">
+                      <p className="text-8xl font-black text-white">{table.parejas?.find(p => p.nombre === 'A')?.chicos_ganados || 0}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase max-w-[100px] truncate mx-auto">{table.jugador1 || '---'}</p>
+                      <p className="text-[8px] font-black text-billar-neon/40">PTS: {table.score1 || 0}</p>
+                    </div>
+                    <div className="text-2xl font-black text-slate-800 italic">VS</div>
+                    <div className="text-center space-y-1">
+                      <p className="text-8xl font-black text-white">{table.parejas?.find(p => p.nombre === 'B')?.chicos_ganados || 0}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase max-w-[100px] truncate mx-auto">{table.jugador2 || '---'}</p>
+                      <p className="text-[8px] font-black text-billar-neon/40">PTS: {table.score2 || 0}</p>
+                    </div>
                   </div>
                   <div className="flex items-center justify-center gap-3 bg-white/5 py-2 rounded-xl mt-4"><Clock className="text-billar-neon" size={14} /><p className="text-xl font-black font-mono"><Timer start={table.inicio} /></p></div>
                 </div>

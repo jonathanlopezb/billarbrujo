@@ -103,6 +103,7 @@ export default async function handler(req, res) {
     try {
       if (accion === 'registrar_chico') {
         await sql`INSERT INTO resultados_partida (id_partida, id_pareja_ganadora, valor_chico) VALUES (${partidaId}, ${id_pareja_ganadora}, 1000)`;
+        await sql`UPDATE partidas SET score1 = 0, score2 = 0 WHERE id = ${partidaId}`;
         return res.status(200).json({ ok: true });
       } else if (accion === 'update_score') {
         await sql`UPDATE partidas SET score1 = ${score1 || 0}, score2 = ${score2 || 0} WHERE id = ${partidaId}`;
