@@ -60,6 +60,18 @@ export default async function handler(req, res) {
       } catch (e) { return res.status(500).json({ error: e.message }); }
     }
 
+    // QUICK STOP (no accounting - just free the table for TV control)
+    if (type === 'quick_stop') {
+      const { mesaId, partida_id } = req.body;
+      try {
+        if (partida_id) {
+          await sql`UPDATE partidas SET estado = 'cerrada', fecha_fin = CURRENT_TIMESTAMP WHERE id = ${partida_id}`;
+        }
+        await sql`UPDATE mesas SET estado = 'disponible' WHERE id = ${mesaId}`;
+        return res.status(200).json({ ok: true });
+      } catch (e) { return res.status(500).json({ error: e.message }); }
+    }
+
     // ADD CONSUMO
     if (type === 'consumo') {
       const { id_partida, tipo_consumo, id_persona, id_pareja, id_producto, cantidad, precio_unitario, metodo_pago } = req.body;

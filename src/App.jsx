@@ -193,72 +193,162 @@ const ProductsView = ({ products, onUpdate }) => {
   );
 };
 
-const TVControllerView = ({ tables, onUpdateScore }) => {
+
+const TVControllerView = ({ tables, onUpdateScore, onRefresh }) => {
   const [message, setMessage] = useState('');
-  const [localNames, setLocalNames] = useState({});
-  const handleSetMessage = () => { localStorage.setItem('tv_message', message); window.dispatchEvent(new Event('storage')); alert('Enviado!'); };
-  const handleUpdateNames = async (t) => {
-    const names = localNames[t.id] || { jugador1: t.jugador1, jugador2: t.jugador2 };
-    await fetch('/api/partidas', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ partidaId: t.partida_id, accion: 'update_names', jugador1: names.jugador1, jugador2: names.jugador2 }) });
-    alert('Nombres actualizados!');
+  const [forms, setForms] = useState({});
+
+  const handleSetMessage = () => {
+    localStorage.setItem('tv_message', message);
+    window.dispatchEvent(new Event('storage'));
+    setMessage('');
   };
-  const activeTables = tables.filter(t => t.estado === 'ocupada');
+
+  const getForm = (t) => forms[t.id] || { jugador1: t.jugador1 || '', jugador2: t.jugador2 || '' };
+  const setForm = (id, data) => setForms(f => ({ ...f, [id]: { ...f[id], ...data } }));
+
+  const handleActivar = async (t) => {
+    const f = getForm(t);
+    await fetch('/api/partidas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'start', mesaId: t.id, valorChico: 0, jugador1: f.jugador1 || '---', jugador2: f.jugador2 || '---' })
+    });
+    onRefresh();
+  };
+
+  const handleLiberar = async (t) => {
+    await fetch('/api/partidas', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'quick_stop', mesaId: t.id, partida_id: t.partida_id })
+    });
+    onRefresh();
+  };
+
+  const handleUpdateNames = async (t) => {
+    const f = getForm(t);
+    await fetch('/api/partidas', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partidaId: t.partida_id, accion: 'update_names', jugador1: f.jugador1, jugador2: f.jugador2 })
+    });
+    onRefresh();
+  };
+
+  const handleResetScore = async (t) => {
+    await fetch('/api/partidas', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partidaId: t.partida_id, accion: 'update_score', score1: 0, score2: 0 })
+    });
+    onRefresh();
+  };
+
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-12">
-        <div className="flex-1">
-          <h2 className="text-3xl font-black uppercase italic tracking-tighter">Control de <span className="text-billar-neon">Pantalla</span></h2>
-          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-2">Manejo independiente de puntajes y nombres para TV</p>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+        <div>
+          <h2 className="text-3xl font-black uppercase italic tracking-tighter">Control de <span className="text-billar-neon">TV</span></h2>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Centro de comando — Mesas, Jugadores y Puntajes</p>
         </div>
-        <div className="w-full md:w-auto flex gap-3">
-          <input className="neon-input py-3 px-4 flex-1 md:w-72" placeholder="Mensaje para el televisor..." value={message} onChange={e => setMessage(e.target.value)} />
-          <button onClick={handleSetMessage} className="neon-button px-8 py-3 text-xs uppercase italic font-black">Enviar</button>
+        <div className="flex gap-3 w-full md:w-auto">
+          <input
+            className="neon-input py-3 px-4 flex-1 md:w-72 text-sm"
+            placeholder="📢 Mensaje para el televisor..."
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleSetMessage()}
+          />
+          <button onClick={handleSetMessage} className="neon-button px-6 py-3 text-xs uppercase font-black">Enviar</button>
         </div>
       </div>
+
+      {/* All 3 tables */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {activeTables.map(t => (
-          <div key={t.id} className="glass-card flex flex-col border-billar-neon/20 bg-billar-neon/[0.03] overflow-hidden">
-            <div className="bg-billar-neon/10 px-6 py-3 border-b border-billar-neon/10 flex justify-between items-center">
-               <h3 className="text-xl font-black italic">{t.nombre}</h3>
-               <span className="text-[9px] font-black uppercase text-billar-neon tracking-widest">En Vivo</span>
-            </div>
-            <div className="p-6 space-y-8 flex-1">
-               <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                     <div className="space-y-2">
-                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Local / Jugador 1</label>
-                        <input className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-xs font-bold" defaultValue={t.jugador1} onChange={e => setLocalNames({...localNames, [t.id]: { ...(localNames[t.id] || {jugador2: t.jugador2}), jugador1: e.target.value }})} />
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Visita / Jugador 2</label>
-                        <input className="w-full bg-white/[0.05] border border-white/10 rounded-lg p-2 text-xs font-bold" defaultValue={t.jugador2} onChange={e => setLocalNames({...localNames, [t.id]: { ...(localNames[t.id] || {jugador1: t.jugador1}), jugador2: e.target.value }})} />
-                     </div>
+        {tables.slice(0, 3).map(t => {
+          const ocupada = t.estado === 'ocupada';
+          const f = getForm(t);
+          return (
+            <div key={t.id} className={`glass-card flex flex-col overflow-hidden border-none transition-all ${ocupada ? 'bg-billar-neon/[0.04] shadow-neon-glow' : 'bg-white/[0.02] opacity-80'}`}>
+              {/* Card header */}
+              <div className={`px-6 py-4 border-b flex justify-between items-center ${ocupada ? 'bg-billar-neon/10 border-billar-neon/15' : 'bg-white/5 border-white/5'}`}>
+                <h3 className="text-xl font-black italic">{t.nombre}</h3>
+                <span className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${ocupada ? 'bg-billar-neon text-black' : 'bg-white/10 text-slate-400'}`}>
+                  {ocupada ? '🟢 En Vivo' : '⚪ Libre'}
+                </span>
+              </div>
+
+              <div className="p-6 flex flex-col gap-6 flex-1">
+                {/* Player name inputs — always visible */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Jugador 1</label>
+                    <input
+                      className="w-full bg-white/[0.05] border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-billar-neon/50 outline-none transition-all"
+                      placeholder="Nombre..."
+                      value={f.jugador1}
+                      onChange={e => setForm(t.id, { jugador1: e.target.value })}
+                    />
                   </div>
-                  <button onClick={() => handleUpdateNames(t)} className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-[9px] font-black uppercase tracking-widest transition-all">Guardar Identidad</button>
-               </div>
-               <div className="flex flex-col gap-4">
-                  <p className="text-[9px] font-black text-slate-500 uppercase tracking-tighter text-center">Puntaje del Juego Actual</p>
-                  <div className="flex items-center justify-between gap-6">
-                     <div className="flex-1 flex flex-col items-center gap-3">
-                        <div className="flex items-center gap-2">
-                           <button onClick={() => onUpdateScore(t.partida_id, Math.max(0, (t.score1 || 0) - 1), t.score2)} className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 hover:border-red-500/50 flex items-center justify-center text-red-500 text-xl font-black transition-all">-</button>
-                           <p className="text-5xl font-black text-white w-16 text-center">{t.score1 || 0}</p>
-                           <button onClick={() => onUpdateScore(t.partida_id, (t.score1 || 0) + 1, t.score2)} className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 hover:border-billar-neon/50 flex items-center justify-center text-billar-neon text-xl font-black transition-all">+</button>
-                        </div>
-                     </div>
-                     <div className="text-sm font-black text-slate-700 italic">VS</div>
-                     <div className="flex-1 flex flex-col items-center gap-3">
-                        <div className="flex items-center gap-2">
-                           <button onClick={() => onUpdateScore(t.partida_id, t.score1, Math.max(0, (t.score2 || 0) - 1))} className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 hover:border-red-500/50 flex items-center justify-center text-red-500 text-xl font-black transition-all">-</button>
-                           <p className="text-5xl font-black text-white w-16 text-center">{t.score2 || 0}</p>
-                           <button onClick={() => onUpdateScore(t.partida_id, t.score1, (t.score2 || 0) + 1)} className="w-12 h-12 rounded-2xl bg-black/40 border border-white/10 hover:border-billar-neon/50 flex items-center justify-center text-billar-neon text-xl font-black transition-all">+</button>
-                        </div>
-                     </div>
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">Jugador 2</label>
+                    <input
+                      className="w-full bg-white/[0.05] border border-white/10 rounded-xl p-3 text-sm font-bold focus:border-billar-neon/50 outline-none transition-all"
+                      placeholder="Nombre..."
+                      value={f.jugador2}
+                      onChange={e => setForm(t.id, { jugador2: e.target.value })}
+                    />
                   </div>
-               </div>
+                </div>
+
+                {ocupada ? (
+                  <>
+                    {/* Score controls */}
+                    <div className="flex flex-col gap-3">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-tighter text-center">Chicos / Puntos</p>
+                      <div className="flex items-center justify-between gap-4">
+                        {/* Player 1 score */}
+                        <div className="flex-1 flex flex-col items-center gap-2">
+                          <p className="text-[9px] font-black text-slate-600 uppercase truncate w-full text-center">{t.jugador1 || 'J1'}</p>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => onUpdateScore(t.partida_id, Math.max(0, (t.score1||0)-1), t.score2)} className="w-11 h-11 rounded-2xl bg-black/50 border border-white/10 hover:border-red-500/60 text-red-400 text-2xl font-black transition-all active:scale-95">−</button>
+                            <span className="text-5xl font-black text-white w-14 text-center tabular-nums">{t.score1 || 0}</span>
+                            <button onClick={() => onUpdateScore(t.partida_id, (t.score1||0)+1, t.score2)} className="w-11 h-11 rounded-2xl bg-black/50 border border-white/10 hover:border-billar-neon/60 text-billar-neon text-2xl font-black transition-all active:scale-95">+</button>
+                          </div>
+                        </div>
+                        <div className="text-slate-700 font-black italic text-sm">VS</div>
+                        {/* Player 2 score */}
+                        <div className="flex-1 flex flex-col items-center gap-2">
+                          <p className="text-[9px] font-black text-slate-600 uppercase truncate w-full text-center">{t.jugador2 || 'J2'}</p>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => onUpdateScore(t.partida_id, t.score1, Math.max(0,(t.score2||0)-1))} className="w-11 h-11 rounded-2xl bg-black/50 border border-white/10 hover:border-red-500/60 text-red-400 text-2xl font-black transition-all active:scale-95">−</button>
+                            <span className="text-5xl font-black text-white w-14 text-center tabular-nums">{t.score2 || 0}</span>
+                            <button onClick={() => onUpdateScore(t.partida_id, t.score1, (t.score2||0)+1)} className="w-11 h-11 rounded-2xl bg-black/50 border border-white/10 hover:border-billar-neon/60 text-billar-neon text-2xl font-black transition-all active:scale-95">+</button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="grid grid-cols-2 gap-3 mt-auto">
+                      <button onClick={() => handleUpdateNames(t)} className="py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all border border-white/5 hover:border-white/10">
+                        💾 Guardar Nombres
+                      </button>
+                      <button onClick={() => handleResetScore(t)} className="py-3 rounded-2xl bg-white/5 hover:bg-white/10 text-[10px] font-black uppercase tracking-widest transition-all border border-white/5 hover:border-amber-500/30 hover:text-amber-400">
+                        🔄 Resetear Puntos
+                      </button>
+                    </div>
+                    <button onClick={() => handleLiberar(t)} className="w-full py-3 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[10px] font-black uppercase tracking-widest transition-all border border-red-500/20 hover:border-red-500/40 active:scale-95">
+                      🔓 Liberar Mesa (Sin Cobro)
+                    </button>
+                  </>
+                ) : (
+                  <button onClick={() => handleActivar(t)} className="w-full py-5 rounded-2xl neon-button text-sm font-black uppercase tracking-wider transition-all active:scale-95 mt-auto">
+                    ▶ Activar Mesa
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -874,7 +964,7 @@ export default function App() {
           <AnimatePresence mode="wait">
             <motion.div key={currentView} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {currentView === 'dashboard' && <DashboardView tables={tables} stats={stats} onStartMatch={id => { setSelectedTable(id); setMatchModalOpen(true); }} onSettleMatch={t => { setSelectedTable(t); setSettlementModalOpen(true); }} onAddConsumo={t => { setSelectedTable(t); setSaleModalOpen(true); }} onNewSale={() => { setSelectedTable(null); setSaleModalOpen(true); }} onRegistrarChico={handleRegistrarChico} />}
-              {currentView === 'tv-control' && <TVControllerView tables={tables} onUpdateScore={handleUpdateScore} />}
+              {currentView === 'tv-control' && <TVControllerView tables={tables} onUpdateScore={handleUpdateScore} onRefresh={fetchData} />}
               {currentView === 'inventory' && <ProductsView products={products} onUpdate={fetchData} />}
               {currentView === 'music' && <MusicView queue={queue} user={user} onUpdateQueue={fetchData} />}
               {currentView === 'history' && <HistoryView stats={stats} />}
