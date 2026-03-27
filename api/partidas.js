@@ -117,7 +117,7 @@ export default async function handler(req, res) {
 
   // PATCH: Registrar Chico, Update Score
   if (req.method === 'PATCH') {
-    const { partidaId, accion, id_pareja_ganadora, score1, score2 } = req.body;
+    const { partidaId, accion, id_pareja_ganadora, score1, score2, jugador1, jugador2, pareja_a_id, pareja_b_id, chicos_a, chicos_b } = req.body;
     try {
       if (accion === 'registrar_chico') {
         await sql`INSERT INTO resultados_partida (id_partida, id_pareja_ganadora, valor_chico) VALUES (${partidaId}, ${id_pareja_ganadora}, 1000)`;
@@ -125,6 +125,9 @@ export default async function handler(req, res) {
         return res.status(200).json({ ok: true });
       } else if (accion === 'update_score') {
         await sql`UPDATE partidas SET score1 = ${score1 || 0}, score2 = ${score2 || 0} WHERE id = ${partidaId}`;
+        return res.status(200).json({ ok: true });
+      } else if (accion === 'update_names') {
+        await sql`UPDATE partidas SET jugador1 = ${jugador1}, jugador2 = ${jugador2} WHERE id = ${partidaId}`;
         return res.status(200).json({ ok: true });
       }
     } catch (e) { return res.status(500).json({ error: e.message }); }
