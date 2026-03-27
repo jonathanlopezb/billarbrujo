@@ -277,11 +277,22 @@ const TVView = ({ tables, queue, onSongEnd }) => {
           ))}
         </div>
       </div>
-      <div className="w-[350px] bg-billar-card/30 p-8 flex flex-col border-l border-white/5">
-         <div className="flex items-center gap-3 mb-6"><Music className="text-billar-purple" size={24} /><h2 className="text-xl font-black italic">ROCKOLA</h2></div>
-         <div className="rounded-xl overflow-hidden bg-black aspect-video flex items-center justify-center border border-white/5 mb-8">
-           {queue[0] ? <YouTube videoId={queue[0].videoId} onEnd={() => onSongEnd(queue[0].id)} className="w-full h-full" opts={{ width: '100%', height: '100%', playerVars: { autoplay: 1, controls: 0 } }} /> : <Music size={40} className="text-slate-800" />}
-         </div>
+         <div className="w-[390px] bg-[#08090d] p-8 flex flex-col border-l border-white/5">
+            <div className="flex items-center gap-3 mb-6"><Music className="text-billar-purple pb-1" size={24} /><h2 className="text-xl font-black italic tracking-tighter">ROCKOLA <span className="text-billar-purple">LIVE</span></h2></div>
+            <div className="mb-8 p-6 rounded-3xl bg-billar-purple/10 border border-billar-purple/20 relative overflow-hidden">
+               <div className="text-[9px] font-black text-billar-purple uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 bg-billar-purple rounded-full animate-ping" />
+                  REPRODUCIENDO AHORA
+               </div>
+               {queue[0] ? (
+                 <div className="space-y-4">
+                   <h3 className="text-xl font-black italic uppercase leading-tight line-clamp-2">{queue[0].titulo}</h3>
+                   <div className="hidden">
+                     <YouTube videoId={queue[0].videoId} onEnd={() => onSongEnd(queue[0].id)} opts={{ height: '0', width: '0', playerVars: { autoplay: 1 } }} />
+                   </div>
+                 </div>
+               ) : <div className="py-8 text-center opacity-30"><Music size={32} className="mx-auto mb-2" /><p className="text-[10px] font-black uppercase">SIN MÚSICA</p></div>}
+            </div>
          <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 italic">Próximas en cola:</p>
             {queue.slice(1, 4).map((song, i) => (
@@ -768,7 +779,7 @@ export default function App() {
     const saved = localStorage.getItem('billar_user');
     if (saved) { setUser(JSON.parse(saved)); setView('dashboard'); }
     fetchData();
-    const id = setInterval(fetchData, 4000);
+    const id = setInterval(fetchData, 2000);
     return () => clearInterval(id);
   }, []);
 

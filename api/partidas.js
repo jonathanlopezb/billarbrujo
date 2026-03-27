@@ -79,13 +79,16 @@ export default async function handler(req, res) {
       const { id_partida, pagos } = req.body;
       try {
         for (const p of pagos) {
-          const [cuenta] = await sql`INSERT INTO cuentas (tipo, id_persona, id_pareja, id_partida, total, estado) VALUES (${p.tipo}, ${p.id_persona || null}, ${p.id_pareja || null}, ${id_partida}, ${p.total}, ${p.estado}) RETURNING *`;
+          const personId = p.id_persona && p.id_persona !== "" ? p.id_persona : null;
+          const coupleId = p.id_pareja && p.id_pareja !== "" ? p.id_pareja : null;
+
+          const [cuenta] = await sql`INSERT INTO cuentas (tipo, id_persona, id_pareja, id_partida, total, estado) VALUES (${p.tipo}, ${personId}, ${coupleId}, ${id_partida}, ${p.total}, ${p.estado}) RETURNING *`;
           if (p.estado === 'pagada') {
             await sql`INSERT INTO pagos (id_cuenta, metodo_pago, valor, usuario_registro) VALUES (${cuenta.id}, ${p.metodo_pago}, ${p.total}, 'admin')`;
             const col = p.metodo_pago === 'efectivo' ? 'ventas_efectivo' : (p.metodo_pago === 'nequi' ? 'ventas_nequi' : 'ventas_transferencia');
             await sql`INSERT INTO caja_diaria (fecha, ${sql(col)}, total_dia) VALUES (CURRENT_DATE, ${p.total}, ${p.total}) ON CONFLICT (fecha) DO UPDATE SET ${sql(col)} = caja_diaria.${sql(col)} + ${p.total}, total_dia = caja_diaria.total_dia + ${p.total}`;
           } else if (p.estado === 'credito') {
-            await sql`INSERT INTO creditos (id_persona, id_cuenta, valor, estado) VALUES (${p.id_persona}, ${cuenta.id}, ${p.total}, 'pendiente')`;
+            await sql`INSERT INTO creditos (id_persona, id_cuenta, valor, estado) VALUES (${personId}, ${cuenta.id}, ${p.total}, 'pendiente')`;
             await sql`INSERT INTO caja_diaria (fecha, creditos_generados) VALUES (CURRENT_DATE, ${p.total}) ON CONFLICT (fecha) DO UPDATE SET creditos_generados = caja_diaria.creditos_generados + ${p.total}`;
           }
         }
