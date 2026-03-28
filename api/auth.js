@@ -15,7 +15,7 @@ export default async function handler(req, res) {
         if (users.length === 0) return res.status(401).json({ error: 'Credenciales inválidas' });
         
         const user = users[0];
-        const token = jwt.sign({ id: user.id, username: user.username, rol: user.rol }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        const token = jwt.sign({ id: user.id, username: user.username, rol: user.rol }, process.env.JWT_SECRET || 'billarbrujo-secret-2026', { expiresIn: '24h' });
         
         return res.status(200).json({ 
           token,
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
 
   try {
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'billarbrujo-secret-2026');
     if (decoded.rol !== 'dueño') return res.status(403).json({ error: 'Prohibido' });
 
     // LIST USERS
